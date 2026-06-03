@@ -95,17 +95,15 @@
         pointLight.position.set(5, 5, 5);
         scene.add(pointLight);
 
-        // Kontenery na grafikę Three.js
         let vertexGroup = new THREE.Group();
         let edgeGroup = new THREE.Group();
         scene.add(vertexGroup);
         scene.add(edgeGroup);
 
-        // Kąty obrotu 3D widoku
         vertexGroup.rotation.x = 0.5; vertexGroup.rotation.y = 0.5;
         edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
 
-        // --- GLOBALNE ZMIENNE GEOMETRII 4D ---
+        // --- GLOBALNE ZMIENNE ---
         let vertices4D = [];
         let edges = [];
         let spheres = [];
@@ -113,30 +111,24 @@
         
         let angleXW = 0;
         let angleYW = 0;
-        let angleZW = 0;
-        let currentObject = 1; // 1 = Teserakt, 2 = Pentachor
+        let currentObject = 1; // 1 = Teserakt, 2 = Pentachor, 3 = 24-Komórka
 
-        // --- MATERIAŁY ---
-        const sphereGeo = new THREE.SphereGeometry(0.05, 16, 16);
+        const sphereGeo = new THREE.SphereGeometry(0.04, 16, 16);
         const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.8 });
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.6 });
 
-        // --- GENEROWANIE TESERAKTU ---
+        // --- 1. TESERAKT ---
         function loadTesseract() {
             clearGeometry();
-            
-            // 16 wierzchołków
             for (let x of [-1, 1]) {
                 for (let y of [-1, 1]) {
                     for (let z of [-1, 1]) {
                         for (let w of [-1, 1]) {
-                            vertices4D.push({x: x * 0.9, y: y * 0.9, z: z * 0.9, w: w * 0.9});
+                            vertices4D.push({x: x * 0.8, y: y * 0.8, z: z * 0.8, w: w * 0.8});
                         }
                     }
                 }
             }
-
-            // 32 krawędzie (łączymy punkty różniące się o 1 współrzędną)
             for (let i = 0; i < vertices4D.length; i++) {
                 for (let j = i + 1; j < vertices4D.length; j++) {
                     let diff = 0;
@@ -147,54 +139,93 @@
                     if (diff === 1) edges.push([i, j]);
                 }
             }
-
             buildThreeObjects();
         }
 
-        // --- GENEROWANIE PENTACHORA (5-KOMÓRKA) ---
+        // --- 2. PENTACHOR ---
         function loadPentachor() {
             clearGeometry();
-
-            // Matematyczne wierzchołki regularnego sympleksu 4D (pentachora)
-            // Używamy znormalizowanych współrzędnych dla ładnego balansu w przestrzeni
             const s = 1 / Math.sqrt(10);
             vertices4D = [
-                { x: 0,                 y: 0,                 z: 0,                 w: 4 * s },
-                { x: 0,                 y: 0,                 z: Math.sqrt(3/2),    w: -s },
-                { x: 0,                 y: Math.sqrt(2),      z: -1/Math.sqrt(6),   w: -s },
-                { x: Math.sqrt(5/4),    y: -1/Math.sqrt(2),   z: -1/Math.sqrt(6),   w: -s },
-                { x: -Math.sqrt(5/4),   y: -1/Math.sqrt(2),   z: -1/Math.sqrt(6),   w: -s }
+                { x: 0,                 y: 0,                 z: 0,                 w: 4 * s * 1.5 },
+                { x: 0,                 y: 0,                 z: Math.sqrt(3/2)*1.5,w: -s * 1.5 },
+                { x: 0,                 y: Math.sqrt(2)*1.5,  z: -1/Math.sqrt(6)*1.5,w: -s * 1.5 },
+                { x: Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5 },
+                { x: -Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5 }
             ];
-
-            // W pentachorze każdy wierzchołek łączy się z każdym (5 wierzchołków -> 10 krawędzi)
             for (let i = 0; i < vertices4D.length; i++) {
                 for (let j = i + 1; j < vertices4D.length; j++) {
                     edges.push([i, j]);
                 }
             }
-
             buildThreeObjects();
         }
 
-        // --- FUNKCJE POMOCNICZE TWORZENIA SCENY ---
+        // --- 3. 24-KOMÓRKA (24 WIERZCHOŁKI, 96 KRAWĘDZI) ---
+        function load24Cell() {
+            clearGeometry();
+            
+            // Permutacje współrzędnych dla 24-komórki
+            // 8 wierzchołków typu (±1, 0, 0, 0) i analogiczne kombinacje
+            const baseVertices = [
+                [1,0,0,0], [-1,0,0,0], [0,1,0,0], [0,-1,0,0],
+                [0,0,1,0], [0,0,-1,0], [0,0,0,1], [0,0,0,-1]
+            ];
+            // 16 wierzchołków typu (±0.5, ±0.5, ±0.5, ±0.5)
+            for (let x of [-0.5, 0.5]) {
+                for (let y of [-0.5, 0.5]) {
+                    for (let z of [-0.5, 0.5]) {
+                        for (let w of [-0.5, 0.5]) {
+                            baseVertices.push([x, y, z, w]);
+                        }
+                    }
+                }
+            }
+
+            // Skalujemy, by obiekt miał ładny rozmiar na ekranie
+            baseVertices.forEach(v => {
+                vertices4D.push({ x: v[0] * 1.4, y: v[1] * 1.4, z: v[2] * 1.4, w: v[3] * 1.4 });
+            });
+
+            // Krawędzie łączą punkty, których odległość euklidesowa w 4D wynosi dokładnie 1
+            for (let i = 0; i < vertices4D.length; i++) {
+                for (let j = i + 1; j < vertices4D.length; j++) {
+                    let dx = vertices4D[i].x - vertices4D[j].x;
+                    let dy = vertices4D[i].y - vertices4D[j].y;
+                    let dz = vertices4D[i].z - vertices4D[j].z;
+                    let dw = vertices4D[i].w - vertices4D[j].w;
+                    let distSq = dx*dx + dy*dy + dz*dz + dw*dw;
+                    
+                    // Odległość wynosi 1 (z małą tolerancją na błędy zmiennoprzecinkowe)
+                    if (Math.abs(distSq - 1.96) < 0.1 || Math.abs(distSq - 1.0) < 0.1) {
+                        // Sprawdzenie odległości po przeskalowaniu
+                        let dRawX = baseVertices[i][0] - baseVertices[j][0];
+                        let dRawY = baseVertices[i][1] - baseVertices[j][1];
+                        let dRawZ = baseVertices[i][2] - baseVertices[j][2];
+                        let dRawW = baseVertices[i][3] - baseVertices[j][3];
+                        let rawDistSq = dRawX*dRawX + dRawY*dRawY + dRawZ*dRawZ + dRawW*dRawW;
+                        if (Math.abs(rawDistSq - 1.0) < 0.01) {
+                            edges.push([i, j]);
+                        }
+                    }
+                }
+            }
+            buildThreeObjects();
+        }
+
+        // --- POMOCNICZE ---
         function clearGeometry() {
             while(vertexGroup.children.length > 0){ vertexGroup.remove(vertexGroup.children[0]); }
             while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
-            vertices4D = [];
-            edges = [];
-            spheres = [];
-            lineGeometries = [];
+            vertices4D = []; edges = []; spheres = []; lineGeometries = [];
         }
 
         function buildThreeObjects() {
-            // Tworzenie sfer (wierzchołków)
             vertices4D.forEach(() => {
                 const mesh = new THREE.Mesh(sphereGeo, sphereMat);
                 vertexGroup.add(mesh);
                 spheres.push(mesh);
             });
-
-            // Tworzenie linii (krawędzi)
             edges.forEach(() => {
                 const geo = new THREE.BufferGeometry();
                 const positions = new Float32Array(6); 
@@ -205,36 +236,33 @@
             });
         }
 
-        // --- PROJEKCJA PERSPEKTYWICZNA 4D -> 3D ---
+        // --- PROJEKCJA 4D -> 3D ---
         function project4D() {
             const projectedVertices = [];
 
             vertices4D.forEach(v => {
                 let x = v.x; let y = v.y; let z = v.z; let w = v.w;
 
-                // Rotacja w płaszczyźnie XW
+                // Rotacja w płaszczyznach XW i YW
                 let cosXW = Math.cos(angleXW); let sinXW = Math.sin(angleXW);
                 let x1 = x * cosXW - w * sinXW; let w1 = x * sinXW + w * cosXW;
                 x = x1; w = w1;
 
-                // Rotacja w płaszczyźnie YW
                 let cosYW = Math.cos(angleYW); let sinYW = Math.sin(angleYW);
                 let y1 = y * cosYW - w * sinYW; let w2 = y * sinYW + w * cosYW;
                 y = y1; w = w2;
 
-                // Projekcja perspektywiczna z 4D do 3D
-                const distance4D = currentObject === 1 ? 2 : 1.5; 
+                // Perspektywa 4D
+                const distance4D = 2.5; 
                 const factor = 1 / (distance4D - w);
 
-                const scale = currentObject === 1 ? 1.5 : 1.2;
-                const x3D = x * factor * scale;
-                const y3D = y * factor * scale;
-                const z3D = z * factor * scale;
+                const x3D = x * factor * 1.8;
+                const y3D = y * factor * 1.8;
+                const z3D = z * factor * 1.8;
 
                 projectedVertices.push(new THREE.Vector3(x3D, y3D, z3D));
             });
 
-            // Aktualizacja pozycji obiektów Three.js
             for(let i = 0; i < spheres.length; i++) {
                 if(projectedVertices[i]) spheres[i].position.copy(projectedVertices[i]);
             }
@@ -250,28 +278,25 @@
             });
         }
 
-        // --- PĘTLA ANIMACJI ---
+        // --- ANIMACJA ---
         function animate() {
             requestAnimationFrame(animate);
 
-            // Prędkość obrotów dopasowana do obiektu
-            const speedMod = currentObject === 1 ? 1 : 0.6;
-            angleXW += 0.01 * speedMod;
-            angleYW += 0.007 * speedMod;
+            angleXW += 0.008;
+            angleYW += 0.005;
 
             project4D();
 
-            vertexGroup.rotation.y += 0.003;
-            edgeGroup.rotation.y += 0.003;
+            vertexGroup.rotation.y += 0.002;
+            edgeGroup.rotation.y += 0.002;
 
             renderer.render(scene, camera);
         }
 
-        // Ładowanie początkowe
         loadTesseract();
         animate();
 
-        // --- OBSŁUGA INTERFEJSU I ZMIANY ROZMIARU ---
+        // --- INTERFEJS ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -286,14 +311,20 @@
             if (currentObject === 1) {
                 currentObject = 2;
                 titleEl.innerText = "2. Pentachor (5-Komórka)";
-                descEl.innerText = "Czterowymiarowy odpowiednik czworościanu (simplex 4D). Składa się z 5 wierzchołków i 10 krawędzi. Każdy wierzchołek jest bezpośrednio połączony z każdym innym.";
-                nextBtn.innerText = "Zobacz Teserakt";
+                descEl.innerText = "Czterowymiarowy odpowiednik czworościanu (simplex 4D). Składa się z 5 wierzchołków i 10 krawędzi. Każdy wierzchołek jest połączony z każdym innym.";
+                nextBtn.innerText = "Następny obiekt";
                 loadPentachor();
+            } else if (currentObject === 2) {
+                currentObject = 3;
+                titleEl.innerText = "3. 24-Komórka (Ikositetrachor)";
+                descEl.innerText = "Wyjątkowa wielokomórka regularna, która istnieje WYŁĄCZNIE w 4 wymiarach! Posiada 24 wierzchołki i 96 krawędzi, tworząc niesamowitą strukturę krystaliczną.";
+                nextBtn.innerText = "Zobacz Teserakt";
+                load24Cell();
             } else {
                 currentObject = 1;
                 titleEl.innerText = "1. Teserakt (Hiperkostka 4D)";
                 descEl.innerText = "Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D. Posiada 16 wierzchołków i 32 krawędzie.";
-                nextBtn.innerText = "Zobacz Pentachor";
+                nextBtn.innerText = "Następny obiekt";
                 loadTesseract();
             }
         });
