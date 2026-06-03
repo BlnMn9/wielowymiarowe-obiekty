@@ -115,7 +115,7 @@
         let angleZU = 0; 
         let angleXT = 0; 
         
-        let currentObject = 1; // 1-8
+        let currentObject = 1; // 1-9
 
         let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
         const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
@@ -320,17 +320,13 @@
             buildThreeObjects();
         }
 
-        // --- 8. NOWOŚĆ: HIPERPIRAMIDA DODEKAEDRYCZNA (4D - 21 WIERZCHOŁKÓW, 50 KRAWĘDZI) ---
+        // --- 8. HIPERPIRAMIDA DODEKAEDRYCZNA (4D) ---
         function loadHyperPyramid() {
             clearGeometry(0.04);
-            
-            const phi = (1 + Math.sqrt(5)) / 2; // Złota proporcja do budowy dodekaedru
-            const r = 0.7; // Skala podstawy
-            
-            // A. 20 wierzchołków trójwymiarowej podstawy (dodekaedru) w płaszczyźnie W = -0.4
+            const phi = (1 + Math.sqrt(5)) / 2;
+            const r = 0.7; 
             const baseW = -0.4;
             
-            // 8 narożników kostki wpisanej w dodekaedr
             for (let x of [-1, 1]) {
                 for (let y of [-1, 1]) {
                     for (let z of [-1, 1]) {
@@ -338,9 +334,7 @@
                     }
                 }
             }
-            // Pozostałe 12 specyficznych wierzchołków dodekaedru
-            const p = phi * r;
-            const ip = (1/phi) * r;
+            const p = phi * r; const ip = (1/phi) * r;
             const pairs = [
                 [0, ip, p], [0, -ip, p], [0, ip, -p], [0, -ip, -p],
                 [ip, p, 0], [-ip, p, 0], [ip, -p, 0], [-ip, -p, 0],
@@ -350,27 +344,60 @@
                 verticesND.push({ x: coord[0], y: coord[1], z: coord[2], w: baseW, v: 0, u: 0, t: 0 });
             });
 
-            // B. Krawędzie podstawy dodekaedru (na bazie odległości euklidesowej)
             const targetDistSq = Math.pow(2 * r / phi, 2);
             for (let i = 0; i < 20; i++) {
                 for (let j = i + 1; j < 20; j++) {
                     let dx = verticesND[i].x - verticesND[j].x;
                     let dy = verticesND[i].y - verticesND[j].y;
                     let dz = verticesND[i].z - verticesND[j].z;
-                    let distSq = dx*dx + dy*dy + dz*dz;
-                    if (Math.abs(distSq - targetDistSq) < 0.05) {
+                    if (Math.abs((dx*dx + dy*dy + dz*dz) - targetDistSq) < 0.05) {
                         edges.push([i, j]);
                     }
                 }
             }
-
-            // C. 21. WIERZCHOŁEK - Czubek piramidy wysunięty w 4. wymiar (W = 1.2) na środku osi XYZ
             const apexIndex = verticesND.length;
             verticesND.push({ x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0, t: 0 });
+            for (let i = 0; i < 20; i++) { edges.push([i, apexIndex]); }
 
-            // D. Połączenie czubka ze wszystkimi 20 wierzchołkami podstawy (30 krawędzi bocznych)
-            for (let i = 0; i < 20; i++) {
-                edges.push([i, apexIndex]);
+            buildThreeObjects();
+        }
+
+        // --- 9. NOWOŚĆ: BUTELKA KLEINA W 4D (120 WIERZCHOŁKÓW, 240 KRAWĘDZI) ---
+        function loadKleinBottle() {
+            clearGeometry(0.025);
+            
+            const stepsU = 24; // Rozdzielczość wzdłuż tuby
+            const stepsV = 5;  // Rozdzielczość przekroju kołowego tuby
+            
+            // Generowanie wierzchołków w 4D na podstawie parametrycznych równań Butelki Kleina
+            for (let i = 0; i < stepsU; i++) {
+                let u = (i / stepsU) * Math.PI * 2;
+                for (let j = 0; j < stepsV; j++) {
+                    let v = (j / stepsV) * Math.PI * 2;
+                    
+                    // Klasyczne geometryczne zanurzenie butelki Kleina w 4D
+                    let x = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.cos(u) * 0.5;
+                    let y = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.sin(u) * 0.5;
+                    let z = (Math.sin(u / 2) * Math.sin(v) + Math.cos(u / 2) * Math.sin(2 * v)) * 0.5;
+                    let w = (Math.cos(v) * (1 + Math.sin(u))) * 0.3; // Współrzędna czwartego wymiaru zapobiega kolizji
+
+                    verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
+                }
+            }
+
+            // Tworzenie siatki krawędzi (połączenia wzdłuż u i v z zapętleniem)
+            for (let i = 0; i < stepsU; i++) {
+                for (let j = 0; j < stepsV; j++) {
+                    let current = i * stepsV + j;
+                    
+                    // Połączenie z następnym punktem w okręgu (wymiar V)
+                    let nextV = i * stepsV + ((j + 1) % stepsV);
+                    edges.push([current, nextV]);
+                    
+                    // Połączenie z następnym pierścieniem (wymiar U)
+                    let nextU = ((i + 1) % stepsU) * stepsV + j;
+                    edges.push([current, nextU]);
+                }
             }
 
             buildThreeObjects();
@@ -400,7 +427,7 @@
             });
         }
 
-                        // --- PROJEKCJA WIELOWYMIAROWA ND -> 3D ---
+        // --- PROJEKCJA WIELOWYMIAROWA ND -> 3D ---
         function projectND() {
             const projectedVertices = [];
 
@@ -411,28 +438,25 @@
                 // 1. ROTACJA W 7D
                 if (currentObject === 7) {
                     let cosXT = Math.cos(angleXT); let sinXT = Math.sin(angleXT);
-                    let xTmp = x * cosXT - t * sinXT;
-                    let tTmp = x * sinXT + t * cosXT;
+                    let xTmp = x * cosXT - t * sinXT; let tTmp = x * sinXT + t * cosXT;
                     x = xTmp; t = tTmp;
                 }
 
                 // 2. ROTACJA W 6D
-                if (currentObject >= 6 && currentObject !== 8) {
+                if (currentObject >= 6 && currentObject !== 8 && currentObject !== 9) {
                     let cosZU = Math.cos(angleZU); let sinZU = Math.sin(angleZU);
-                    let zTmp = z * cosZU - u * sinZU;
-                    let uTmp = z * sinZU + u * cosZU;
+                    let zTmp = z * cosZU - u * sinZU; let uTmp = z * sinZU + u * cosZU;
                     z = zTmp; u = uTmp;
                 }
 
                 // 3. ROTACJA W 5D
-                if (currentObject >= 5 && currentObject !== 8) {
+                if (currentObject >= 5 && currentObject !== 8 && currentObject !== 9) {
                     let cosXV = Math.cos(angleXV); let sinXV = Math.sin(angleXV);
-                    let xTmp = x * cosXV - v * sinXV;
-                    let vTmp = x * sinXV + v * cosXV;
+                    let xTmp = x * cosXV - v * sinXV; let vTmp = x * sinXV + v * cosXV;
                     x = xTmp; v = vTmp;
                 }
 
-                // 4. ROTACJE W 4D (Działa również na Hiperpiramidę)
+                // 4. ROTACJE W 4D (Działa również na Piramidę i Butelkę Kleina)
                 let cosXW = Math.cos(angleXW); let sinXW = Math.sin(angleXW);
                 let x1 = x * cosXW - w * sinXW; let w1 = x * sinXW + w * cosXW;
                 x = x1; w = w1;
@@ -444,24 +468,14 @@
                 // 5. WIELOSTOPNIOWA PROJEKCJA PERSPEKTYWICZNA
                 const dist = 2.0;
                 
-                if (currentObject === 7) { 
-                    const f7D = 1 / (dist - t);
-                    x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D;
-                }
-                if (currentObject === 6) { 
-                    const f6D = 1 / (dist - u);
-                    x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D;
-                }
-                if (currentObject === 5) { 
-                    const f5D = 1 / (dist - v);
-                    x *= f5D; y *= f5D; z *= f5D; w *= f5D;
-                }
+                if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; }
+                if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
+                if (currentObject === 5) { const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; }
                 
                 // Rzut końcowy 4D -> 3D
-                // Dla piramidy ustawiamy stałą odległość rzutowania, by zachować ładną strukturę stożka
-                const distance4D = currentObject === 8 ? 2.3 : dist;
+                const distance4D = (currentObject === 8 || currentObject === 9) ? 2.3 : dist;
                 const f4D = 1 / (distance4D - w);
-                const scale = currentObject === 7 ? 3.0 : (currentObject === 6 ? 2.6 : 2.0);
+                const scale = currentObject === 7 ? 3.0 : (currentObject === 6 ? 2.6 : (currentObject === 9 ? 3.2 : 2.0));
                 
                 const x3D = x * f4D * scale;
                 const y3D = y * f4D * scale;
@@ -470,7 +484,7 @@
                 projectedVertices.push(new THREE.Vector3(x3D, y3D, z3D));
             });
 
-            // Aktualizacja współrzędnych w silniku graficznym
+            // Aktualizacja komponentów Three.js
             for(let i = 0; i < spheres.length; i++) {
                 if(projectedVertices[i]) spheres[i].position.copy(projectedVertices[i]);
             }
@@ -560,8 +574,14 @@
                 currentObject = 8;
                 titleEl.innerText = "8. Hiperpiramida Dodekaedryczna (Stożek 4D)";
                 descEl.innerText = "Obiekt hybrydowy. Podstawą jest trójwymiarowy dwunastościan foremny (20 wierzchołków) umieszczony w przestrzeni 3D, natomiast pojedynczy wierzchołek (czubek piramidy) wysunięty jest w czwarty wymiar. Posiada 21 wierzchołków i 50 krawędzi.";
-                nextBtn.innerText = "Zobacz Teserakt";
+                nextBtn.innerText = "Następny obiekt";
                 loadHyperPyramid();
+            } else if (currentObject === 8) {
+                currentObject = 9;
+                titleEl.innerText = "9. Butelka Kleina w 4D";
+                descEl.innerText = "Słynna jednostronna powierzchnia topologiczna. W trójwymiarze musi przecinać samą siebie, jednak rzutowana z przestrzeni 4D gładko przechodzi 'nad' swoją strukturą dzięki osi W. Wizualizacja składa się ze 120 punktów ułożonych w rurę.";
+                nextBtn.innerText = "Zobacz Teserakt";
+                loadKleinBottle();
             } else {
                 currentObject = 1;
                 titleEl.innerText = "1. Teserakt (Hiperkostka 4D)";
