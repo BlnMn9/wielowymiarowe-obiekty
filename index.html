@@ -34,6 +34,8 @@
             margin: 0 0 20px 0;
             color: #aaa;
             font-size: 14px;
+            max-width: 400px;
+            line-height: 1.4;
         }
 
         .btn {
@@ -66,7 +68,7 @@
 
     <div id="ui-container">
         <h1 id="object-title">1. Teserakt (Hiperkostka 4D)</h1>
-        <p id="object-desc">Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D.</p>
+        <p id="object-desc">Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D. Posiada 16 wierzchołków i 32 krawędzie.</p>
         <button class="btn" id="next-btn">Następny obiekt</button>
     </div>
 
@@ -75,7 +77,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // --- KONFIGURACJA SCENY THREE.JS ---
+        // --- SEKCJA INICJALIZACJI THREE.JS ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         
@@ -87,188 +89,212 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         container.appendChild(renderer.domElement);
 
-        // Oświetlenie
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
         const pointLight = new THREE.PointLight(0x00ffcc, 1, 100);
         pointLight.position.set(5, 5, 5);
         scene.add(pointLight);
 
-        // --- MATEMATYKA i STRUKTURA TESERAKTU ---
-        
-        // 16 wierzchołków teseraktu w przestrzeni 4D (współrzędne x, y, z, w)
-        const vertices4D = [];
-        for (let x of [-1, 1]) {
-            for (let y of [-1, 1]) {
-                for (let z of [-1, 1]) {
-                    for (let w of [-1, 1]) {
-                        vertices4D.push({x, y, z, w});
-                    }
-                }
-            }
-        }
-
-        // Generowanie krawędzi łączących wierzchołki różniące się tylko jedną współrzędną
-        const edges = [];
-        for (let i = 0; i < vertices4D.length; i++) {
-            for (let j = i + 1; j < vertices4D.length; j++) {
-                let diff = 0;
-                if (vertices4D[i].x !== vertices4D[j].x) diff++;
-                if (vertices4D[i].y !== vertices4D[j].y) diff++;
-                if (vertices4D[i].z !== vertices4D[j].z) diff++;
-                if (vertices4D[i].w !== vertices4D[j].w) diff++;
-                
-                if (diff === 1) {
-                    edges.push([i, j]);
-                }
-            }
-        }
-
-        // Zmienne rotacji w 4D
-        let angleXW = 0;
-        let angleYW = 0;
-        let angleZW = 0;
-
-        // Tworzenie obiektów graficznych w Three.js (Sfery jako wierzchołki, Linie jako krawędzie)
-        const vertexGroup = new THREE.Group();
-        const edgeGroup = new THREE.Group();
+        // Kontenery na grafikę Three.js
+        let vertexGroup = new THREE.Group();
+        let edgeGroup = new THREE.Group();
         scene.add(vertexGroup);
         scene.add(edgeGroup);
 
-        // Geometria wierzchołka (mała kuleczka)
+        // Kąty obrotu 3D widoku
+        vertexGroup.rotation.x = 0.5; vertexGroup.rotation.y = 0.5;
+        edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
+
+        // --- GLOBALNE ZMIENNE GEOMETRII 4D ---
+        let vertices4D = [];
+        let edges = [];
+        let spheres = [];
+        let lineGeometries = [];
+        
+        let angleXW = 0;
+        let angleYW = 0;
+        let angleZW = 0;
+        let currentObject = 1; // 1 = Teserakt, 2 = Pentachor
+
+        // --- MATERIAŁY ---
         const sphereGeo = new THREE.SphereGeometry(0.05, 16, 16);
         const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
-        
-        const spheres = [];
-        for(let i=0; i<16; i++) {
-            const mesh = new THREE.Mesh(sphereGeo, sphereMat);
-            vertexGroup.add(mesh);
-            spheres.push(mesh);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.8 });
+
+        // --- GENEROWANIE TESERAKTU ---
+        function loadTesseract() {
+            clearGeometry();
+            
+            // 16 wierzchołków
+            for (let x of [-1, 1]) {
+                for (let y of [-1, 1]) {
+                    for (let z of [-1, 1]) {
+                        for (let w of [-1, 1]) {
+                            vertices4D.push({x: x * 0.9, y: y * 0.9, z: z * 0.9, w: w * 0.9});
+                        }
+                    }
+                }
+            }
+
+            // 32 krawędzie (łączymy punkty różniące się o 1 współrzędną)
+            for (let i = 0; i < vertices4D.length; i++) {
+                for (let j = i + 1; j < vertices4D.length; j++) {
+                    let diff = 0;
+                    if (vertices4D[i].x !== vertices4D[j].x) diff++;
+                    if (vertices4D[i].y !== vertices4D[j].y) diff++;
+                    if (vertices4D[i].z !== vertices4D[j].z) diff++;
+                    if (vertices4D[i].w !== vertices4D[j].w) diff++;
+                    if (diff === 1) edges.push([i, j]);
+                }
+            }
+
+            buildThreeObjects();
         }
 
-        // Geometria krawędzi (linie)
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.8, linewidth: 2 });
-        const lineGeometries = [];
-        const lines = [];
+        // --- GENEROWANIE PENTACHORA (5-KOMÓRKA) ---
+        function loadPentachor() {
+            clearGeometry();
 
-        edges.forEach(edge => {
-            const geo = new THREE.BufferGeometry();
-            const positions = new Float32Array(6); // 2 punkty * 3 współrzędne (x,y,z)
-            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const line = new THREE.Line(geo, lineMat);
-            edgeGroup.add(line);
-            lines.push(line);
-            lineGeometries.push(geo);
-        });
+            // Matematyczne wierzchołki regularnego sympleksu 4D (pentachora)
+            // Używamy znormalizowanych współrzędnych dla ładnego balansu w przestrzeni
+            const s = 1 / Math.sqrt(10);
+            vertices4D = [
+                { x: 0,                 y: 0,                 z: 0,                 w: 4 * s },
+                { x: 0,                 y: 0,                 z: Math.sqrt(3/2),    w: -s },
+                { x: 0,                 y: Math.sqrt(2),      z: -1/Math.sqrt(6),   w: -s },
+                { x: Math.sqrt(5/4),    y: -1/Math.sqrt(2),   z: -1/Math.sqrt(6),   w: -s },
+                { x: -Math.sqrt(5/4),   y: -1/Math.sqrt(2),   z: -1/Math.sqrt(6),   w: -s }
+            ];
 
-        // Kąty obrotu 3D dla całej grupy (żeby patrzeć na obiekt pod ładnym kątem)
-        vertexGroup.rotation.x = 0.5;
-        vertexGroup.rotation.y = 0.5;
-        edgeGroup.rotation.x = 0.5;
-        edgeGroup.rotation.y = 0.5;
+            // W pentachorze każdy wierzchołek łączy się z każdym (5 wierzchołków -> 10 krawędzi)
+            for (let i = 0; i < vertices4D.length; i++) {
+                for (let j = i + 1; j < vertices4D.length; j++) {
+                    edges.push([i, j]);
+                }
+            }
 
-        // --- FUNKCJA PROJEKCJI 4D -> 3D ---
+            buildThreeObjects();
+        }
+
+        // --- FUNKCJE POMOCNICZE TWORZENIA SCENY ---
+        function clearGeometry() {
+            while(vertexGroup.children.length > 0){ vertexGroup.remove(vertexGroup.children[0]); }
+            while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
+            vertices4D = [];
+            edges = [];
+            spheres = [];
+            lineGeometries = [];
+        }
+
+        function buildThreeObjects() {
+            // Tworzenie sfer (wierzchołków)
+            vertices4D.forEach(() => {
+                const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+                vertexGroup.add(mesh);
+                spheres.push(mesh);
+            });
+
+            // Tworzenie linii (krawędzi)
+            edges.forEach(() => {
+                const geo = new THREE.BufferGeometry();
+                const positions = new Float32Array(6); 
+                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const line = new THREE.Line(geo, lineMat);
+                edgeGroup.add(line);
+                lineGeometries.push(geo);
+            });
+        }
+
+        // --- PROJEKCJA PERSPEKTYWICZNA 4D -> 3D ---
         function project4D() {
             const projectedVertices = [];
 
             vertices4D.forEach(v => {
-                // Kopia punktu do transformacji
-                let x = v.x;
-                let y = v.y;
-                let z = v.z;
-                let w = v.w;
+                let x = v.x; let y = v.y; let z = v.z; let w = v.w;
 
                 // Rotacja w płaszczyźnie XW
-                let cosXW = Math.cos(angleXW);
-                let sinXW = Math.sin(angleXW);
-                let x1 = x * cosXW - w * sinXW;
-                let w1 = x * sinXW + w * cosXW;
+                let cosXW = Math.cos(angleXW); let sinXW = Math.sin(angleXW);
+                let x1 = x * cosXW - w * sinXW; let w1 = x * sinXW + w * cosXW;
                 x = x1; w = w1;
 
                 // Rotacja w płaszczyźnie YW
-                let cosYW = Math.cos(angleYW);
-                let sinYW = Math.sin(angleYW);
-                let y1 = y * cosYW - w * sinYW;
-                let w2 = y * sinYW + w * cosYW;
+                let cosYW = Math.cos(angleYW); let sinYW = Math.sin(angleYW);
+                let y1 = y * cosYW - w * sinYW; let w2 = y * sinYW + w * cosYW;
                 y = y1; w = w2;
 
-                // Perspektywiczna projekcja z 4D do 3D
-                // Odległość kamery 4D od obiektu (im większa, tym mniejsze zniekształcenia)
-                const distance4D = 2; 
+                // Projekcja perspektywiczna z 4D do 3D
+                const distance4D = currentObject === 1 ? 2 : 1.5; 
                 const factor = 1 / (distance4D - w);
 
-                // Skalowanie współrzędnych 3D na podstawie czwartego wymiaru (w)
-                const x3D = x * factor * 1.5;
-                const y3D = y * factor * 1.5;
-                const z3D = z * factor * 1.5;
+                const scale = currentObject === 1 ? 1.5 : 1.2;
+                const x3D = x * factor * scale;
+                const y3D = y * factor * scale;
+                const z3D = z * factor * scale;
 
                 projectedVertices.push(new THREE.Vector3(x3D, y3D, z3D));
             });
 
-            // Aktualizacja pozycji sfer (wierzchołków)
-            for(let i=0; i<16; i++) {
-                spheres[i].position.copy(projectedVertices[i]);
+            // Aktualizacja pozycji obiektów Three.js
+            for(let i = 0; i < spheres.length; i++) {
+                if(projectedVertices[i]) spheres[i].position.copy(projectedVertices[i]);
             }
 
-            // Aktualizacja pozycji linii (krawędzi)
             edges.forEach((edge, index) => {
                 const geo = lineGeometries[index];
-                const posAttr = geo.attributes.position;
-                
-                posAttr.setXYZ(0, projectedVertices[edge[0]].x, projectedVertices[edge[0]].y, projectedVertices[edge[0]].z);
-                posAttr.setXYZ(1, projectedVertices[edge[1]].x, projectedVertices[edge[1]].y, projectedVertices[edge[1]].z);
-                
-                posAttr.needsUpdate = true;
+                if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
+                    const posAttr = geo.attributes.position;
+                    posAttr.setXYZ(0, projectedVertices[edge[0]].x, projectedVertices[edge[0]].y, projectedVertices[edge[0]].z);
+                    posAttr.setXYZ(1, projectedVertices[edge[1]].x, projectedVertices[edge[1]].y, projectedVertices[edge[1]].z);
+                    posAttr.needsUpdate = true;
+                }
             });
         }
 
-        // --- GŁÓWNA PĘTLA ANIMACJI ---
+        // --- PĘTLA ANIMACJI ---
         function animate() {
             requestAnimationFrame(animate);
 
-            // Zmiana kątów rotacji w czasie
-            angleXW += 0.01;
-            angleYW += 0.007;
-            angleZW += 0.002;
+            // Prędkość obrotów dopasowana do obiektu
+            const speedMod = currentObject === 1 ? 1 : 0.6;
+            angleXW += 0.01 * speedMod;
+            angleYW += 0.007 * speedMod;
 
-            // Przeliczenie pozycji punktów 4D do świata 3D
             project4D();
 
-            // Delikatny obrót całej sceny w 3D dla lepszego efektu głębi
-            vertexGroup.rotation.y += 0.002;
-            edgeGroup.rotation.y += 0.002;
+            vertexGroup.rotation.y += 0.003;
+            edgeGroup.rotation.y += 0.003;
 
             renderer.render(scene, camera);
         }
 
+        // Ładowanie początkowe
+        loadTesseract();
         animate();
 
-        // --- OBSŁUGA ZMIANY ROZMIARU OKNA ---
+        // --- OBSŁUGA INTERFEJSU I ZMIANY ROZMIARU ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // --- LOGIKA PRZEŁĄCZANIA OBIEKTÓW (MIEJSCE NA KOLEJNE FAZY) ---
-        let currentObject = 1;
         const titleEl = document.getElementById('object-title');
         const descEl = document.getElementById('object-desc');
         const nextBtn = document.getElementById('next-btn');
 
         nextBtn.addEventListener('click', () => {
-            currentObject++;
-            if (currentObject === 2) {
-                titleEl.innerText = "2. Pentachor (5-Komórka / 4D Simplex)";
-                descEl.innerText = "Czterowymiarowy odpowiednik czworościanu. Posiada 5 wierzchołków i 10 krawędzi. (Miejsce na Twoją kolejną implementację!)";
-                // Tutaj w przyszłości możesz dodać funkcję czyszczącą starą geometrię 
-                // i ładującą tablicę punktów dla kolejnego hiper-obiektu.
-                nextBtn.innerText = "Zacznij od nowa";
+            if (currentObject === 1) {
+                currentObject = 2;
+                titleEl.innerText = "2. Pentachor (5-Komórka)";
+                descEl.innerText = "Czterowymiarowy odpowiednik czworościanu (simplex 4D). Składa się z 5 wierzchołków i 10 krawędzi. Każdy wierzchołek jest bezpośrednio połączony z każdym innym.";
+                nextBtn.innerText = "Zobacz Teserakt";
+                loadPentachor();
             } else {
                 currentObject = 1;
                 titleEl.innerText = "1. Teserakt (Hiperkostka 4D)";
-                descEl.innerText = "Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D.";
-                nextBtn.innerText = "Następny obiekt";
+                descEl.innerText = "Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D. Posiada 16 wierzchołków i 32 krawędzie.";
+                nextBtn.innerText = "Zobacz Pentachor";
+                loadTesseract();
             }
         });
     </script>
