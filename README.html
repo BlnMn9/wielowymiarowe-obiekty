@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wielowymiarowe Obiekty Geometryczne</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        p {
+            margin: 0 0 20px 0;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            pointer-events: auto;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #00ffcc;
+            color: #000;
+            box-shadow: 0 0 15px #00ffcc;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <h1 id="object-title">1. Teserakt (Hiperkostka 4D)</h1>
+        <p id="object-desc">Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D.</p>
+        <button class="btn" id="next-btn">Następny obiekt</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // --- KONFIGURACJA SCENY THREE.JS ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 4;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        // Oświetlenie
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0x00ffcc, 1, 100);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // --- MATEMATYKA i STRUKTURA TESERAKTU ---
+        
+        // 16 wierzchołków teseraktu w przestrzeni 4D (współrzędne x, y, z, w)
+        const vertices4D = [];
+        for (let x of [-1, 1]) {
+            for (let y of [-1, 1]) {
+                for (let z of [-1, 1]) {
+                    for (let w of [-1, 1]) {
+                        vertices4D.push({x, y, z, w});
+                    }
+                }
+            }
+        }
+
+        // Generowanie krawędzi łączących wierzchołki różniące się tylko jedną współrzędną
+        const edges = [];
+        for (let i = 0; i < vertices4D.length; i++) {
+            for (let j = i + 1; j < vertices4D.length; j++) {
+                let diff = 0;
+                if (vertices4D[i].x !== vertices4D[j].x) diff++;
+                if (vertices4D[i].y !== vertices4D[j].y) diff++;
+                if (vertices4D[i].z !== vertices4D[j].z) diff++;
+                if (vertices4D[i].w !== vertices4D[j].w) diff++;
+                
+                if (diff === 1) {
+                    edges.push([i, j]);
+                }
+            }
+        }
+
+        // Zmienne rotacji w 4D
+        let angleXW = 0;
+        let angleYW = 0;
+        let angleZW = 0;
+
+        // Tworzenie obiektów graficznych w Three.js (Sfery jako wierzchołki, Linie jako krawędzie)
+        const vertexGroup = new THREE.Group();
+        const edgeGroup = new THREE.Group();
+        scene.add(vertexGroup);
+        scene.add(edgeGroup);
+
+        // Geometria wierzchołka (mała kuleczka)
+        const sphereGeo = new THREE.SphereGeometry(0.05, 16, 16);
+        const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
+        
+        const spheres = [];
+        for(let i=0; i<16; i++) {
+            const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+            vertexGroup.add(mesh);
+            spheres.push(mesh);
+        }
+
+        // Geometria krawędzi (linie)
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.8, linewidth: 2 });
+        const lineGeometries = [];
+        const lines = [];
+
+        edges.forEach(edge => {
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(6); // 2 punkty * 3 współrzędne (x,y,z)
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const line = new THREE.Line(geo, lineMat);
+            edgeGroup.add(line);
+            lines.push(line);
+            lineGeometries.push(geo);
+        });
+
+        // Kąty obrotu 3D dla całej grupy (żeby patrzeć na obiekt pod ładnym kątem)
+        vertexGroup.rotation.x = 0.5;
+        vertexGroup.rotation.y = 0.5;
+        edgeGroup.rotation.x = 0.5;
+        edgeGroup.rotation.y = 0.5;
+
+        // --- FUNKCJA PROJEKCJI 4D -> 3D ---
+        function project4D() {
+            const projectedVertices = [];
+
+            vertices4D.forEach(v => {
+                // Kopia punktu do transformacji
+                let x = v.x;
+                let y = v.y;
+                let z = v.z;
+                let w = v.w;
+
+                // Rotacja w płaszczyźnie XW
+                let cosXW = Math.cos(angleXW);
+                let sinXW = Math.sin(angleXW);
+                let x1 = x * cosXW - w * sinXW;
+                let w1 = x * sinXW + w * cosXW;
+                x = x1; w = w1;
+
+                // Rotacja w płaszczyźnie YW
+                let cosYW = Math.cos(angleYW);
+                let sinYW = Math.sin(angleYW);
+                let y1 = y * cosYW - w * sinYW;
+                let w2 = y * sinYW + w * cosYW;
+                y = y1; w = w2;
+
+                // Perspektywiczna projekcja z 4D do 3D
+                // Odległość kamery 4D od obiektu (im większa, tym mniejsze zniekształcenia)
+                const distance4D = 2; 
+                const factor = 1 / (distance4D - w);
+
+                // Skalowanie współrzędnych 3D na podstawie czwartego wymiaru (w)
+                const x3D = x * factor * 1.5;
+                const y3D = y * factor * 1.5;
+                const z3D = z * factor * 1.5;
+
+                projectedVertices.push(new THREE.Vector3(x3D, y3D, z3D));
+            });
+
+            // Aktualizacja pozycji sfer (wierzchołków)
+            for(let i=0; i<16; i++) {
+                spheres[i].position.copy(projectedVertices[i]);
+            }
+
+            // Aktualizacja pozycji linii (krawędzi)
+            edges.forEach((edge, index) => {
+                const geo = lineGeometries[index];
+                const posAttr = geo.attributes.position;
+                
+                posAttr.setXYZ(0, projectedVertices[edge[0]].x, projectedVertices[edge[0]].y, projectedVertices[edge[0]].z);
+                posAttr.setXYZ(1, projectedVertices[edge[1]].x, projectedVertices[edge[1]].y, projectedVertices[edge[1]].z);
+                
+                posAttr.needsUpdate = true;
+            });
+        }
+
+        // --- GŁÓWNA PĘTLA ANIMACJI ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Zmiana kątów rotacji w czasie
+            angleXW += 0.01;
+            angleYW += 0.007;
+            angleZW += 0.002;
+
+            // Przeliczenie pozycji punktów 4D do świata 3D
+            project4D();
+
+            // Delikatny obrót całej sceny w 3D dla lepszego efektu głębi
+            vertexGroup.rotation.y += 0.002;
+            edgeGroup.rotation.y += 0.002;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // --- OBSŁUGA ZMIANY ROZMIARU OKNA ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- LOGIKA PRZEŁĄCZANIA OBIEKTÓW (MIEJSCE NA KOLEJNE FAZY) ---
+        let currentObject = 1;
+        const titleEl = document.getElementById('object-title');
+        const descEl = document.getElementById('object-desc');
+        const nextBtn = document.getElementById('next-btn');
+
+        nextBtn.addEventListener('click', () => {
+            currentObject++;
+            if (currentObject === 2) {
+                titleEl.innerText = "2. Pentachor (5-Komórka / 4D Simplex)";
+                descEl.innerText = "Czterowymiarowy odpowiednik czworościanu. Posiada 5 wierzchołków i 10 krawędzi. (Miejsce na Twoją kolejną implementację!)";
+                // Tutaj w przyszłości możesz dodać funkcję czyszczącą starą geometrię 
+                // i ładującą tablicę punktów dla kolejnego hiper-obiektu.
+                nextBtn.innerText = "Zacznij od nowa";
+            } else {
+                currentObject = 1;
+                titleEl.innerText = "1. Teserakt (Hiperkostka 4D)";
+                descEl.innerText = "Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D.";
+                nextBtn.innerText = "Następny obiekt";
+            }
+        });
+    </script>
+</body>
+</html>
