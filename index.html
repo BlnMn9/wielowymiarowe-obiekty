@@ -104,7 +104,7 @@
         edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
 
         // --- GLOBALNE ZMIENNE ---
-        let verticesND = []; // Struktura: x, y, z, w, v, u, t
+        let verticesND = []; 
         let edges = [];
         let spheres = [];
         let lineGeometries = [];
@@ -113,9 +113,9 @@
         let angleYW = 0;
         let angleXV = 0; 
         let angleZU = 0; 
-        let angleXT = 0; // Dodatkowy kąt rotacji dla wymiaru 7D
+        let angleXT = 0; 
         
-        let currentObject = 1; // 1-7 (Od Teseraktu do Hepteraktu)
+        let currentObject = 1; // 1-8
 
         let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
         const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
@@ -283,11 +283,9 @@
             buildThreeObjects();
         }
 
-        // --- 7. NOWOŚĆ: HEPTERAKT (HIPERSZEŚCIAN 7D - 128 WIERZCHOŁKÓW, 448 KRAWĘDZI) ---
+        // --- 7. HEPTERAKT (7D) ---
         function loadHepterakt() {
-            clearGeometry(0.015); // Bardzo małe punkty ze względu na zagęszczenie sieci
-            
-            // Generowanie 128 wierzchołków w 7D (dodatkowa oś 't')
+            clearGeometry(0.015); 
             for (let x of [-1, 1]) {
                 for (let y of [-1, 1]) {
                     for (let z of [-1, 1]) {
@@ -306,8 +304,6 @@
                     }
                 }
             }
-
-            // Generowanie 448 krawędzi
             for (let i = 0; i < verticesND.length; i++) {
                 for (let j = i + 1; j < verticesND.length; j++) {
                     let diff = 0;
@@ -324,12 +320,68 @@
             buildThreeObjects();
         }
 
+        // --- 8. NOWOŚĆ: HIPERPIRAMIDA DODEKAEDRYCZNA (4D - 21 WIERZCHOŁKÓW, 50 KRAWĘDZI) ---
+        function loadHyperPyramid() {
+            clearGeometry(0.04);
+            
+            const phi = (1 + Math.sqrt(5)) / 2; // Złota proporcja do budowy dodekaedru
+            const r = 0.7; // Skala podstawy
+            
+            // A. 20 wierzchołków trójwymiarowej podstawy (dodekaedru) w płaszczyźnie W = -0.4
+            const baseW = -0.4;
+            
+            // 8 narożników kostki wpisanej w dodekaedr
+            for (let x of [-1, 1]) {
+                for (let y of [-1, 1]) {
+                    for (let z of [-1, 1]) {
+                        verticesND.push({ x: x*r, y: y*r, z: z*r, w: baseW, v: 0, u: 0, t: 0 });
+                    }
+                }
+            }
+            // Pozostałe 12 specyficznych wierzchołków dodekaedru
+            const p = phi * r;
+            const ip = (1/phi) * r;
+            const pairs = [
+                [0, ip, p], [0, -ip, p], [0, ip, -p], [0, -ip, -p],
+                [ip, p, 0], [-ip, p, 0], [ip, -p, 0], [-ip, -p, 0],
+                [p, 0, ip], [-p, 0, ip], [p, 0, -ip], [-p, 0, -ip]
+            ];
+            pairs.forEach(coord => {
+                verticesND.push({ x: coord[0], y: coord[1], z: coord[2], w: baseW, v: 0, u: 0, t: 0 });
+            });
+
+            // B. Krawędzie podstawy dodekaedru (na bazie odległości euklidesowej)
+            const targetDistSq = Math.pow(2 * r / phi, 2);
+            for (let i = 0; i < 20; i++) {
+                for (let j = i + 1; j < 20; j++) {
+                    let dx = verticesND[i].x - verticesND[j].x;
+                    let dy = verticesND[i].y - verticesND[j].y;
+                    let dz = verticesND[i].z - verticesND[j].z;
+                    let distSq = dx*dx + dy*dy + dz*dz;
+                    if (Math.abs(distSq - targetDistSq) < 0.05) {
+                        edges.push([i, j]);
+                    }
+                }
+            }
+
+            // C. 21. WIERZCHOŁEK - Czubek piramidy wysunięty w 4. wymiar (W = 1.2) na środku osi XYZ
+            const apexIndex = verticesND.length;
+            verticesND.push({ x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0, t: 0 });
+
+            // D. Połączenie czubka ze wszystkimi 20 wierzchołkami podstawy (30 krawędzi bocznych)
+            for (let i = 0; i < 20; i++) {
+                edges.push([i, apexIndex]);
+            }
+
+            buildThreeObjects();
+        }
+
         // --- POMOCNICZE FUNKCJE SCENY ---
         function clearGeometry(size) {
             while(vertexGroup.children.length > 0){ vertexGroup.remove(vertexGroup.children[0]); }
             while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
             verticesND = []; edges = []; spheres = []; lineGeometries = [];
-            sphereGeo = new THREE.SphereGeometry(size, 6, 6); // Optymalizacja segmentów sfery dla płynności
+            sphereGeo = new THREE.SphereGeometry(size, 6, 6);
         }
 
         function buildThreeObjects() {
@@ -348,7 +400,7 @@
             });
         }
 
-        // --- PROJEKCJA WIELOWYMIAROWA ND -> 3D ---
+                        // --- PROJEKCJA WIELOWYMIAROWA ND -> 3D ---
         function projectND() {
             const projectedVertices = [];
 
@@ -356,7 +408,7 @@
                 let x = p.x; let y = p.y; let z = p.z; 
                 let w = p.w; let v = p.v; let u = p.u; let t = p.t;
 
-                // 1. ROTACJA W 7D (Płaszczyzna XT)
+                // 1. ROTACJA W 7D
                 if (currentObject === 7) {
                     let cosXT = Math.cos(angleXT); let sinXT = Math.sin(angleXT);
                     let xTmp = x * cosXT - t * sinXT;
@@ -364,8 +416,8 @@
                     x = xTmp; t = tTmp;
                 }
 
-                // 2. ROTACJA W 6D (Hekterakt i Hepterakt)
-                if (currentObject >= 6) {
+                // 2. ROTACJA W 6D
+                if (currentObject >= 6 && currentObject !== 8) {
                     let cosZU = Math.cos(angleZU); let sinZU = Math.sin(angleZU);
                     let zTmp = z * cosZU - u * sinZU;
                     let uTmp = z * sinZU + u * cosZU;
@@ -373,14 +425,14 @@
                 }
 
                 // 3. ROTACJA W 5D
-                if (currentObject >= 5) {
+                if (currentObject >= 5 && currentObject !== 8) {
                     let cosXV = Math.cos(angleXV); let sinXV = Math.sin(angleXV);
                     let xTmp = x * cosXV - v * sinXV;
                     let vTmp = x * sinXV + v * cosXV;
                     x = xTmp; v = vTmp;
                 }
 
-                // 4. ROTACJE W 4D
+                // 4. ROTACJE W 4D (Działa również na Hiperpiramidę)
                 let cosXW = Math.cos(angleXW); let sinXW = Math.sin(angleXW);
                 let x1 = x * cosXW - w * sinXW; let w1 = x * sinXW + w * cosXW;
                 x = x1; w = w1;
@@ -389,25 +441,28 @@
                 let y1 = y * cosYW - w * sinYW; let w2 = y * sinYW + w * cosYW;
                 y = y1; w = w2;
 
-                // 5. POCZWÓRNY RZUT PERSPEKTYWICZNY
+                // 5. WIELOSTOPNIOWA PROJEKCJA PERSPEKTYWICZNA
                 const dist = 2.0;
                 
-                if (currentObject === 7) { // 7D -> 6D
+                if (currentObject === 7) { 
                     const f7D = 1 / (dist - t);
                     x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D;
                 }
-                if (currentObject >= 6) { // 6D -> 5D
+                if (currentObject === 6) { 
                     const f6D = 1 / (dist - u);
                     x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D;
                 }
-                if (currentObject >= 5) { // 5D -> 4D
+                if (currentObject === 5) { 
                     const f5D = 1 / (dist - v);
                     x *= f5D; y *= f5D; z *= f5D; w *= f5D;
                 }
                 
-                // 4D -> 3D (Zwieńczenie projekcji)
-                const f4D = 1 / (dist - w);
+                // Rzut końcowy 4D -> 3D
+                // Dla piramidy ustawiamy stałą odległość rzutowania, by zachować ładną strukturę stożka
+                const distance4D = currentObject === 8 ? 2.3 : dist;
+                const f4D = 1 / (distance4D - w);
                 const scale = currentObject === 7 ? 3.0 : (currentObject === 6 ? 2.6 : 2.0);
+                
                 const x3D = x * f4D * scale;
                 const y3D = y * f4D * scale;
                 const z3D = z * f4D * scale;
@@ -415,7 +470,7 @@
                 projectedVertices.push(new THREE.Vector3(x3D, y3D, z3D));
             });
 
-            // Aktualizacja współrzędnych linii i wierzchołków
+            // Aktualizacja współrzędnych w silniku graficznym
             for(let i = 0; i < spheres.length; i++) {
                 if(projectedVertices[i]) spheres[i].position.copy(projectedVertices[i]);
             }
@@ -440,7 +495,7 @@
             angleYW += speed * 0.6;
             angleXV += speed * 0.4; 
             angleZU += speed * 0.3; 
-            angleXT += speed * 0.2; // Obrót w wymiarze 7D
+            angleXT += speed * 0.2; 
 
             projectND();
 
@@ -499,8 +554,14 @@
                 currentObject = 7;
                 titleEl.innerText = "7. Hepterakt (Hipersześcian 7D)";
                 descEl.innerText = "Imponująca struktura w przestrzeni siedmiowymiarowej. Zawiera aż 128 wierzchołków i 448 łączących je linii. Trójwymiarowy obraz powstaje na drodze poczwórnego rzutu perspektywicznego.";
-                nextBtn.innerText = "Zobacz Teserakt";
+                nextBtn.innerText = "Następny obiekt";
                 loadHepterakt();
+            } else if (currentObject === 7) {
+                currentObject = 8;
+                titleEl.innerText = "8. Hiperpiramida Dodekaedryczna (Stożek 4D)";
+                descEl.innerText = "Obiekt hybrydowy. Podstawą jest trójwymiarowy dwunastościan foremny (20 wierzchołków) umieszczony w przestrzeni 3D, natomiast pojedynczy wierzchołek (czubek piramidy) wysunięty jest w czwarty wymiar. Posiada 21 wierzchołków i 50 krawędzi.";
+                nextBtn.innerText = "Zobacz Teserakt";
+                loadHyperPyramid();
             } else {
                 currentObject = 1;
                 titleEl.innerText = "1. Teserakt (Hiperkostka 4D)";
