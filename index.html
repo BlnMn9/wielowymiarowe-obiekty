@@ -104,7 +104,7 @@
         edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
 
         // --- GLOBALNE ZMIENNE ---
-        let verticesND = []; // x, y, z, w, v, u
+        let verticesND = []; // Struktura: x, y, z, w, v, u, t
         let edges = [];
         let spheres = [];
         let lineGeometries = [];
@@ -112,12 +112,14 @@
         let angleXW = 0;
         let angleYW = 0;
         let angleXV = 0; 
-        let angleZU = 0; // Dodatkowy kąt dla 6D
-        let currentObject = 1; // 1=Teserakt, 2=Pentachor, 3=24-Komórka, 4=16-Komórka, 5=Penterakt, 6=Hekterakt
+        let angleZU = 0; 
+        let angleXT = 0; // Dodatkowy kąt rotacji dla wymiaru 7D
+        
+        let currentObject = 1; // 1-7 (Od Teseraktu do Hepteraktu)
 
         let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
         const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.6 });
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.5 });
 
         // --- 1. TESERAKT (4D) ---
         function loadTesseract() {
@@ -126,7 +128,7 @@
                 for (let y of [-1, 1]) {
                     for (let z of [-1, 1]) {
                         for (let w of [-1, 1]) {
-                            verticesND.push({x: x * 0.8, y: y * 0.8, z: z * 0.8, w: w * 0.8, v: 0, u: 0});
+                            verticesND.push({x: x * 0.8, y: y * 0.8, z: z * 0.8, w: w * 0.8, v: 0, u: 0, t: 0});
                         }
                     }
                 }
@@ -149,11 +151,11 @@
             clearGeometry(0.05);
             const s = 1 / Math.sqrt(10);
             verticesND = [
-                { x: 0,                 y: 0,                 z: 0,                 w: 4 * s * 1.5, v: 0, u: 0 },
-                { x: 0,                 y: 0,                 z: Math.sqrt(3/2)*1.5,w: -s * 1.5, v: 0, u: 0 },
-                { x: 0,                 y: Math.sqrt(2)*1.5,  z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0 },
-                { x: Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0 },
-                { x: -Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0 }
+                { x: 0,                 y: 0,                 z: 0,                 w: 4 * s * 1.5, v: 0, u: 0, t: 0 },
+                { x: 0,                 y: 0,                 z: Math.sqrt(3/2)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 },
+                { x: 0,                 y: Math.sqrt(2)*1.5,  z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 },
+                { x: Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 },
+                { x: -Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 }
             ];
             for (let i = 0; i < verticesND.length; i++) {
                 for (let j = i + 1; j < verticesND.length; j++) {
@@ -180,7 +182,7 @@
                 }
             }
             baseVertices.forEach(v => {
-                verticesND.push({ x: v[0] * 1.3, y: v[1] * 1.3, z: v[2] * 1.3, w: v[3] * 1.3, v: 0, u: 0 });
+                verticesND.push({ x: v[0] * 1.3, y: v[1] * 1.3, z: v[2] * 1.3, w: v[3] * 1.3, v: 0, u: 0, t: 0 });
             });
 
             for (let i = 0; i < verticesND.length; i++) {
@@ -198,17 +200,15 @@
             buildThreeObjects();
         }
 
-        // --- 4. ZAMIANA: 16-KOMÓRKA (4D - IDEALNIE WIDOCZNE KRAWĘDZIE) ---
+        // --- 4. 16-KOMÓRKA (4D) ---
         function load16Cell() {
             clearGeometry(0.045);
-            // 8 wierzchołków na osiach układu współrzędnych 4D
             verticesND = [
-                {x: 1.2, y: 0, z: 0, w: 0, v: 0, u: 0}, {x: -1.2, y: 0, z: 0, w: 0, v: 0, u: 0},
-                {x: 0, y: 1.2, z: 0, w: 0, v: 0, u: 0}, {x: 0, y: -1.2, z: 0, w: 0, v: 0, u: 0},
-                {x: 0, y: 0, z: 1.2, w: 0, v: 0, u: 0}, {x: 0, y: 0, z: -1.2, w: 0, v: 0, u: 0},
-                {x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0}, {x: 0, y: 0, z: 0, w: -1.2, v: 0, u: 0}
+                {x: 1.2, y: 0, z: 0, w: 0, v: 0, u: 0, t: 0}, {x: -1.2, y: 0, z: 0, w: 0, v: 0, u: 0, t: 0},
+                {x: 0, y: 1.2, z: 0, w: 0, v: 0, u: 0, t: 0}, {x: 0, y: -1.2, z: 0, w: 0, v: 0, u: 0, t: 0},
+                {x: 0, y: 0, z: 1.2, w: 0, v: 0, u: 0, t: 0}, {x: 0, y: 0, z: -1.2, w: 0, v: 0, u: 0, t: 0},
+                {x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0, t: 0}, {x: 0, y: 0, z: 0, w: -1.2, v: 0, u: 0, t: 0}
             ];
-            // Krawędzie łączą wszystkie pary punktów z WYJĄTKIEM tych na tej samej osi (np. x=1.2 i x=-1.2)
             for (let i = 0; i < verticesND.length; i++) {
                 for (let j = i + 1; j < verticesND.length; j++) {
                     if (i === 0 && j === 1) continue;
@@ -229,7 +229,7 @@
                     for (let z of [-1, 1]) {
                         for (let w of [-1, 1]) {
                             for (let v of [-1, 1]) {
-                                verticesND.push({x: x * 0.7, y: y * 0.7, z: z * 0.7, w: w * 0.7, v: v * 0.7, u: 0});
+                                verticesND.push({x: x * 0.7, y: y * 0.7, z: z * 0.7, w: w * 0.7, v: v * 0.7, u: 0, t: 0});
                             }
                         }
                     }
@@ -249,10 +249,9 @@
             buildThreeObjects();
         }
 
-        // --- 6. NOWOŚĆ: HEKTERAKT (HIPERSZEŚCIAN 6D - 64 WIERZCHOŁKI, 192 KRAWĘDZIE) ---
+        // --- 6. HEKTERAKT (6D) ---
         function loadHekterakt() {
             clearGeometry(0.025);
-            // Generowanie 64 punktów w 6D (dodatkowa oś 'u')
             for (let x of [-1, 1]) {
                 for (let y of [-1, 1]) {
                     for (let z of [-1, 1]) {
@@ -261,7 +260,7 @@
                                 for (let u of [-1, 1]) {
                                     verticesND.push({
                                         x: x * 0.65, y: y * 0.65, z: z * 0.65, 
-                                        w: w * 0.65, v: v * 0.65, u: u * 0.65
+                                        w: w * 0.65, v: v * 0.65, u: u * 0.65, t: 0
                                     });
                                 }
                             }
@@ -269,7 +268,6 @@
                     }
                 }
             }
-            // Generowanie 192 krawędzi
             for (let i = 0; i < verticesND.length; i++) {
                 for (let j = i + 1; j < verticesND.length; j++) {
                     let diff = 0;
@@ -285,12 +283,53 @@
             buildThreeObjects();
         }
 
+        // --- 7. NOWOŚĆ: HEPTERAKT (HIPERSZEŚCIAN 7D - 128 WIERZCHOŁKÓW, 448 KRAWĘDZI) ---
+        function loadHepterakt() {
+            clearGeometry(0.015); // Bardzo małe punkty ze względu na zagęszczenie sieci
+            
+            // Generowanie 128 wierzchołków w 7D (dodatkowa oś 't')
+            for (let x of [-1, 1]) {
+                for (let y of [-1, 1]) {
+                    for (let z of [-1, 1]) {
+                        for (let w of [-1, 1]) {
+                            for (let v of [-1, 1]) {
+                                for (let u of [-1, 1]) {
+                                    for (let t of [-1, 1]) {
+                                        verticesND.push({
+                                            x: x * 0.6, y: y * 0.6, z: z * 0.6, 
+                                            w: w * 0.6, v: v * 0.6, u: u * 0.6, t: t * 0.6
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Generowanie 448 krawędzi
+            for (let i = 0; i < verticesND.length; i++) {
+                for (let j = i + 1; j < verticesND.length; j++) {
+                    let diff = 0;
+                    if (verticesND[i].x !== verticesND[j].x) diff++;
+                    if (verticesND[i].y !== verticesND[j].y) diff++;
+                    if (verticesND[i].z !== verticesND[j].z) diff++;
+                    if (verticesND[i].w !== verticesND[j].w) diff++;
+                    if (verticesND[i].v !== verticesND[j].v) diff++;
+                    if (verticesND[i].u !== verticesND[j].u) diff++;
+                    if (verticesND[i].t !== verticesND[j].t) diff++;
+                    if (diff === 1) edges.push([i, j]);
+                }
+            }
+            buildThreeObjects();
+        }
+
         // --- POMOCNICZE FUNKCJE SCENY ---
         function clearGeometry(size) {
             while(vertexGroup.children.length > 0){ vertexGroup.remove(vertexGroup.children[0]); }
             while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
             verticesND = []; edges = []; spheres = []; lineGeometries = [];
-            sphereGeo = new THREE.SphereGeometry(size, 8, 8);
+            sphereGeo = new THREE.SphereGeometry(size, 6, 6); // Optymalizacja segmentów sfery dla płynności
         }
 
         function buildThreeObjects() {
@@ -315,17 +354,25 @@
 
             verticesND.forEach(p => {
                 let x = p.x; let y = p.y; let z = p.z; 
-                let w = p.w; let v = p.v; let u = p.u;
+                let w = p.w; let v = p.v; let u = p.u; let t = p.t;
 
-                // 1. ROTACJA W 6D (dla Hekteraktu)
-                if (currentObject === 6) {
+                // 1. ROTACJA W 7D (Płaszczyzna XT)
+                if (currentObject === 7) {
+                    let cosXT = Math.cos(angleXT); let sinXT = Math.sin(angleXT);
+                    let xTmp = x * cosXT - t * sinXT;
+                    let tTmp = x * sinXT + t * cosXT;
+                    x = xTmp; t = tTmp;
+                }
+
+                // 2. ROTACJA W 6D (Hekterakt i Hepterakt)
+                if (currentObject >= 6) {
                     let cosZU = Math.cos(angleZU); let sinZU = Math.sin(angleZU);
                     let zTmp = z * cosZU - u * sinZU;
                     let uTmp = z * sinZU + u * cosZU;
                     z = zTmp; u = uTmp;
                 }
 
-                // 2. ROTACJA W 5D (dla Penteraktu i Hekteraktu)
+                // 3. ROTACJA W 5D
                 if (currentObject >= 5) {
                     let cosXV = Math.cos(angleXV); let sinXV = Math.sin(angleXV);
                     let xTmp = x * cosXV - v * sinXV;
@@ -333,7 +380,7 @@
                     x = xTmp; v = vTmp;
                 }
 
-                // 3. ROTACJE W 4D (wszystkie obiekty)
+                // 4. ROTACJE W 4D
                 let cosXW = Math.cos(angleXW); let sinXW = Math.sin(angleXW);
                 let x1 = x * cosXW - w * sinXW; let w1 = x * sinXW + w * cosXW;
                 x = x1; w = w1;
@@ -342,10 +389,14 @@
                 let y1 = y * cosYW - w * sinYW; let w2 = y * sinYW + w * cosYW;
                 y = y1; w = w2;
 
-                // 4. WIELOSTOPNIOWA PROJEKCJA PERSPEKTYWICZNA
+                // 5. POCZWÓRNY RZUT PERSPEKTYWICZNY
                 const dist = 2.0;
                 
-                if (currentObject === 6) { // 6D -> 5D
+                if (currentObject === 7) { // 7D -> 6D
+                    const f7D = 1 / (dist - t);
+                    x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D;
+                }
+                if (currentObject >= 6) { // 6D -> 5D
                     const f6D = 1 / (dist - u);
                     x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D;
                 }
@@ -354,9 +405,9 @@
                     x *= f5D; y *= f5D; z *= f5D; w *= f5D;
                 }
                 
-                // 4D -> 3D (Ostateczny rzut)
+                // 4D -> 3D (Zwieńczenie projekcji)
                 const f4D = 1 / (dist - w);
-                const scale = currentObject === 6 ? 2.6 : 2.0;
+                const scale = currentObject === 7 ? 3.0 : (currentObject === 6 ? 2.6 : 2.0);
                 const x3D = x * f4D * scale;
                 const y3D = y * f4D * scale;
                 const z3D = z * f4D * scale;
@@ -364,7 +415,7 @@
                 projectedVertices.push(new THREE.Vector3(x3D, y3D, z3D));
             });
 
-            // Podmiana pozycji w Three.js
+            // Aktualizacja współrzędnych linii i wierzchołków
             for(let i = 0; i < spheres.length; i++) {
                 if(projectedVertices[i]) spheres[i].position.copy(projectedVertices[i]);
             }
@@ -388,7 +439,8 @@
             angleXW += speed;
             angleYW += speed * 0.6;
             angleXV += speed * 0.4; 
-            angleZU += speed * 0.3; // Rotacja osi 6D
+            angleZU += speed * 0.3; 
+            angleXT += speed * 0.2; // Obrót w wymiarze 7D
 
             projectND();
 
@@ -441,8 +493,14 @@
                 currentObject = 6;
                 titleEl.innerText = "6. Hekterakt (Hipersześcian 6D)";
                 descEl.innerText = "Ekstremalna geometria sześciu wymiarów! Hipersześcian 6D posiada 64 wierzchołki oraz 192 krawędzie. Wizualizacja powstaje za pomocą potrójnego rzutowania perspektywicznego.";
-                nextBtn.innerText = "Zobacz Teserakt";
+                nextBtn.innerText = "Następny obiekt";
                 loadHekterakt();
+            } else if (currentObject === 6) {
+                currentObject = 7;
+                titleEl.innerText = "7. Hepterakt (Hipersześcian 7D)";
+                descEl.innerText = "Imponująca struktura w przestrzeni siedmiowymiarowej. Zawiera aż 128 wierzchołków i 448 łączących je linii. Trójwymiarowy obraz powstaje na drodze poczwórnego rzutu perspektywicznego.";
+                nextBtn.innerText = "Zobacz Teserakt";
+                loadHepterakt();
             } else {
                 currentObject = 1;
                 titleEl.innerText = "1. Teserakt (Hiperkostka 4D)";
