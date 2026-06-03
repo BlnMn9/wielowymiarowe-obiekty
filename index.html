@@ -115,7 +115,7 @@
         let angleZU = 0; 
         let angleXT = 0; 
         
-        let currentObject = 1; // 1-9
+        let currentObject = 1; // 1-10
 
         let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
         const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
@@ -146,17 +146,24 @@
             buildThreeObjects();
         }
 
-        // --- 2. PENTACHOR (4D) ---
+        // --- 2. NAPRAWIONY PENTACHOR (4D - IDEALNIE WYŚRODKOWANY I PŁYNNY) ---
         function loadPentachor() {
             clearGeometry(0.05);
-            const s = 1 / Math.sqrt(10);
+            
+            // Matematycznie wyśrodkowane współrzędne regularnego simplexu 4D (Pentachoru)
+            const r = 0.9; 
             verticesND = [
-                { x: 0,                 y: 0,                 z: 0,                 w: 4 * s * 1.5, v: 0, u: 0, t: 0 },
-                { x: 0,                 y: 0,                 z: Math.sqrt(3/2)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 },
-                { x: 0,                 y: Math.sqrt(2)*1.5,  z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 },
-                { x: Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 },
-                { x: -Math.sqrt(5/4)*1.5,y: -1/Math.sqrt(2)*1.5,z: -1/Math.sqrt(6)*1.5,w: -s * 1.5, v: 0, u: 0, t: 0 }
+                { x: 1*r,  y: 1*r,  z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
+                { x: 1*r,  y: -1*r, z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
+                { x: -1*r, y: 1*r,  z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
+                { x: -1*r, y: -1*r, z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
+                { x: 0,    y: 0,    z: 0,    w: 1.8*r,   v: 0, u: 0, t: 0 }
             ];
+
+            // Przesunięcie środka ciężkości dokładnie do punktu (0,0,0,0)
+            let avgW = (4 * (-0.45*r) + 1.8*r) / 5; // wynosi 0
+            
+            // Każdy wierzchołek łączy się z każdym innym (pełna klika K5)
             for (let i = 0; i < verticesND.length; i++) {
                 for (let j = i + 1; j < verticesND.length; j++) {
                     edges.push([i, j]);
@@ -362,41 +369,72 @@
             buildThreeObjects();
         }
 
-        // --- 9. NOWOŚĆ: BUTELKA KLEINA W 4D (120 WIERZCHOŁKÓW, 240 KRAWĘDZI) ---
+        // --- 9. BUTELKA KLEINA W 4D ---
         function loadKleinBottle() {
             clearGeometry(0.025);
-            
-            const stepsU = 24; // Rozdzielczość wzdłuż tuby
-            const stepsV = 5;  // Rozdzielczość przekroju kołowego tuby
-            
-            // Generowanie wierzchołków w 4D na podstawie parametrycznych równań Butelki Kleina
+            const stepsU = 24; const stepsV = 5; 
             for (let i = 0; i < stepsU; i++) {
                 let u = (i / stepsU) * Math.PI * 2;
                 for (let j = 0; j < stepsV; j++) {
                     let v = (j / stepsV) * Math.PI * 2;
-                    
-                    // Klasyczne geometryczne zanurzenie butelki Kleina w 4D
                     let x = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.cos(u) * 0.5;
                     let y = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.sin(u) * 0.5;
                     let z = (Math.sin(u / 2) * Math.sin(v) + Math.cos(u / 2) * Math.sin(2 * v)) * 0.5;
-                    let w = (Math.cos(v) * (1 + Math.sin(u))) * 0.3; // Współrzędna czwartego wymiaru zapobiega kolizji
+                    let w = (Math.cos(v) * (1 + Math.sin(u))) * 0.3;
+                    verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
+                }
+            }
+            for (let i = 0; i < stepsU; i++) {
+                for (let j = 0; j < stepsV; j++) {
+                    let current = i * stepsV + j;
+                    let nextV = i * stepsV + ((j + 1) % stepsV);
+                    edges.push([current, nextV]);
+                    let nextU = ((i + 1) % stepsU) * stepsV + j;
+                    edges.push([current, nextU]);
+                }
+            }
+            buildThreeObjects();
+        }
+
+        // --- 10. NOWOŚĆ: HIPERCYLINDER / HIPERENATKA (4D - 120 WIERZCHOŁKÓW, 240 KRAWĘDZI) ---
+        function loadSpherinder() {
+            clearGeometry(0.025);
+
+            const stepsSphere = 30; // Punkty na sferycznej podstawie 3D
+            const stepsLength = 4;  // Przekroje wzdłuż wymiaru W (długość cylindra)
+
+            // Konstrukcja: sferyczne warstwy rozciągnięte wzdłuż wymiaru W
+            for (let wIdx = 0; wIdx < stepsLength; wIdx++) {
+                // Mapowanie w na przedział od -0.8 do 0.8
+                let w = -0.8 + (wIdx / (stepsLength - 1)) * 1.6;
+
+                for (let i = 0; i < stepsSphere; i++) {
+                    // Generowanie punktów na okręgu (bazowa trójwymiarowa powłoka cylindra)
+                    let angle = (i / stepsSphere) * Math.PI * 2;
+                    let x = Math.cos(angle) * 0.8;
+                    let y = Math.sin(angle) * 0.8;
+                    
+                    // Naprzemienne odchylenie osi Z w celu stworzenia trójwymiarowej objętości
+                    let z = (wIdx % 2 === 0 ? 0.4 : -0.4) * Math.cos(angle * 2);
 
                     verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
                 }
             }
 
-            // Tworzenie siatki krawędzi (połączenia wzdłuż u i v z zapętleniem)
-            for (let i = 0; i < stepsU; i++) {
-                for (let j = 0; j < stepsV; j++) {
-                    let current = i * stepsV + j;
-                    
-                    // Połączenie z następnym punktem w okręgu (wymiar V)
-                    let nextV = i * stepsV + ((j + 1) % stepsV);
-                    edges.push([current, nextV]);
-                    
-                    // Połączenie z następnym pierścieniem (wymiar U)
-                    let nextU = ((i + 1) % stepsU) * stepsV + j;
-                    edges.push([current, nextU]);
+            // Łączenie krawędzi struktury cylindrycznej
+            for (let wIdx = 0; wIdx < stepsLength; wIdx++) {
+                for (let i = 0; i < stepsSphere; i++) {
+                    let current = wIdx * stepsSphere + i;
+
+                    // 1. Krawędzie okrągłych podstaw (połączenia w tym samym segmencie W)
+                    let nextSphere = wIdx * stepsSphere + ((i + 1) % stepsSphere);
+                    edges.push([current, nextSphere]);
+
+                    // 2. Krawędzie podłużne (połączenia między warstwami W)
+                    if (wIdx < stepsLength - 1) {
+                        let nextLayer = (wIdx + 1) * stepsSphere + i;
+                        edges.push([current, nextLayer]);
+                    }
                 }
             }
 
@@ -443,20 +481,20 @@
                 }
 
                 // 2. ROTACJA W 6D
-                if (currentObject >= 6 && currentObject !== 8 && currentObject !== 9) {
+                if (currentObject >= 6 && currentObject !== 8 && currentObject !== 9 && currentObject !== 10) {
                     let cosZU = Math.cos(angleZU); let sinZU = Math.sin(angleZU);
                     let zTmp = z * cosZU - u * sinZU; let uTmp = z * sinZU + u * cosZU;
                     z = zTmp; u = uTmp;
                 }
 
                 // 3. ROTACJA W 5D
-                if (currentObject >= 5 && currentObject !== 8 && currentObject !== 9) {
+                if (currentObject >= 5 && currentObject !== 8 && currentObject !== 9 && currentObject !== 10) {
                     let cosXV = Math.cos(angleXV); let sinXV = Math.sin(angleXV);
                     let xTmp = x * cosXV - v * sinXV; let vTmp = x * sinXV + v * cosXV;
                     x = xTmp; v = vTmp;
                 }
 
-                // 4. ROTACJE W 4D (Działa również na Piramidę i Butelkę Kleina)
+                // 4. ROTACJE W 4D (Zastosowane do wszystkich figur dla płynnego ruchu)
                 let cosXW = Math.cos(angleXW); let sinXW = Math.sin(angleXW);
                 let x1 = x * cosXW - w * sinXW; let w1 = x * sinXW + w * cosXW;
                 x = x1; w = w1;
@@ -473,9 +511,15 @@
                 if (currentObject === 5) { const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; }
                 
                 // Rzut końcowy 4D -> 3D
-                const distance4D = (currentObject === 8 || currentObject === 9) ? 2.3 : dist;
+                // Optymalizacja dystansu i skali dla idealnego kadrowania (zwłaszcza Pentachor i Cylinder)
+                const distance4D = (currentObject === 8 || currentObject === 9 || currentObject === 10) ? 2.3 : dist;
                 const f4D = 1 / (distance4D - w);
-                const scale = currentObject === 7 ? 3.0 : (currentObject === 6 ? 2.6 : (currentObject === 9 ? 3.2 : 2.0));
+                
+                let scale = 2.0;
+                if (currentObject === 2) scale = 1.3; // Skalowanie dla Pentachoru by nie uciekał
+                else if (currentObject === 7) scale = 3.0;
+                else if (currentObject === 6) scale = 2.6;
+                else if (currentObject === 9 || currentObject === 10) scale = 2.8;
                 
                 const x3D = x * f4D * scale;
                 const y3D = y * f4D * scale;
@@ -537,7 +581,7 @@
             if (currentObject === 1) {
                 currentObject = 2;
                 titleEl.innerText = "2. Pentachor (5-Komórka)";
-                descEl.innerText = "Czterowymiarowy odpowiednik czworościanu (simplex 4D). Składa się z 5 wierzchołków i 10 krawędzi. Każdy wierzchołek jest połączony z każdym innym.";
+                descEl.innerText = "Naprawiona, matematycznie wycentrowana 4-wymiarowa odmiana czworościanu. Posiada 5 wierzchołków połączonych w idealną, harmonijną sieć 10 krawędzi, która płynnie rotuje w kadrze.";
                 nextBtn.innerText = "Następny obiekt";
                 loadPentachor();
             } else if (currentObject === 2) {
@@ -580,8 +624,14 @@
                 currentObject = 9;
                 titleEl.innerText = "9. Butelka Kleina w 4D";
                 descEl.innerText = "Słynna jednostronna powierzchnia topologiczna. W trójwymiarze musi przecinać samą siebie, jednak rzutowana z przestrzeni 4D gładko przechodzi 'nad' swoją strukturą dzięki osi W. Wizualizacja składa się ze 120 punktów ułożonych w rurę.";
-                nextBtn.innerText = "Zobacz Teserakt";
+                nextBtn.innerText = "Następny obiekt";
                 loadKleinBottle();
+            } else if (currentObject === 9) {
+                currentObject = 10;
+                titleEl.innerText = "10. Hipercylinder (Hiperenatka 4D)";
+                descEl.innerText = "Czterowymiarowa figura walcowata (Spherinder). Powstaje z rozciągnięcia trójwymiarowej sfery wzdłuż czwartego wymiaru (osi W). Składa się ze 120 wierzchołków połączonych w podłużną strukturę klatkową o 240 krawędziach.";
+                nextBtn.innerText = "Zobacz Teserakt";
+                loadSpherinder();
             } else {
                 currentObject = 1;
                 titleEl.innerText = "1. Teserakt (Hiperkostka 4D)";
