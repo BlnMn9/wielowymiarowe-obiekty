@@ -389,6 +389,7 @@ function projectND() {
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
+        // 1. Rotacje w wyższych wymiarach
         if (currentObject === 7) {
             let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
             let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
@@ -397,12 +398,12 @@ function projectND() {
             let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
             let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
         }
-        
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
             let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
         }
 
+        // 2. Rotacje w przestrzeni 4D (płaszczyzny XW i YW)
         let factorXW = 1.0;
         let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
 
@@ -412,25 +413,31 @@ function projectND() {
         let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
+        // 3. Kaskadowe rzutowanie perspektywiczne (ND -> ... -> 5D -> 4D -> 3D)
         const dist = 2.0;
-        if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; }
-        if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
-        
+        if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
+        if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
         }
 
+        // Rzutowanie z 4D do 3D przy użyciu poprawnie przeliczonego ramienia 'w'
         const distance4D = isSpecial4D ? 2.4 : dist;
         const f4D = 1 / (distance4D - w);
 
+        // Skalowanie końcowe dla ekranu 3D
         let scale = (currentObject === 1) ? 1.8 : 2.0;
         if (currentObject === 2) scale = 1.3;
         else if (currentObject === 5) scale = 1.7;
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
-        else if (currentObject === 11) scale = 2.2; 
-        else if (currentObject === 12) scale = 2.1; 
+        else if (currentObject === 11) scale = 2.4; // delikatna korekta widoczności
+        else if (currentObject === 12) scale = 2.3; // delikatna korekta widoczności
         else if (currentObject >= 9) scale = 2.8;
+
+        projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
+    });
+
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
