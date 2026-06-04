@@ -2,6 +2,9 @@
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 
+// Dodanie mgły do sceny - obiekty oddalone będą naturalnie wtapiać się w ciemne tło
+scene.fog = new THREE.FogExp2(0x000000, 0.18);
+
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.z = 4;
 
@@ -10,9 +13,10 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 container.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Zmniejszone światło otoczenia dla większego kontrastu
 scene.add(ambientLight);
-const pointLight = new THREE.PointLight(0x00ffcc, 1.5, 100);
+
+const pointLight = new THREE.PointLight(0x00ffcc, 2.0, 100);
 pointLight.position.set(5, 5, 5);
 scene.add(pointLight);
 
@@ -35,17 +39,28 @@ let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0;
 let currentObject = 1; // 1 do 11
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
-const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x00ffcc });
-const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.5 });
+
+// Używamy MeshStandardMaterial z mapowaniem chropowatości dla lepszego odbijania światła 3D
+const sphereMat = new THREE.MeshStandardMaterial({ 
+    color: 0xffffff, 
+    roughness: 0.2,
+    metalness: 0.8
+});
+
+// Krawędzie będą używać Vertex Colors - kolory liczone dynamicznie dla każdego wierzchołka krawędzi osobno
+const lineMat = new THREE.LineBasicMaterial({ 
+    vertexColors: true,
+    transparent: true, 
+    opacity: 0.9 
+});
 
 // --- FUNKCJE CZYSZCZENIA I BUDOWANIA ---
 function clearGeometry(size) {
     while(vertexGroup.children.length > 0){ vertexGroup.remove(vertexGroup.children[0]); }
     while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
-    sphereGeo = new THREE.SphereGeometry(size, 6, 6);
+    sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    // Reset rotacji 3D do domyślnych stanów wyjściowych dla nowych obiektów
     if (currentObject === 1) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
@@ -57,14 +72,19 @@ function clearGeometry(size) {
 
 function buildThreeObjects() {
     verticesND.forEach(() => {
-        const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+        // Klonujemy materiał dla każdej sfery, aby móc sterować kolorem każdego punktu niezależnie
+        const mesh = new THREE.Mesh(sphereGeo, sphereMat.clone());
         vertexGroup.add(mesh);
         spheres.push(mesh);
     });
     edges.forEach(() => {
         const geo = new THREE.BufferGeometry();
-        const positions = new Float32Array(6); 
+        const positions = new Float32Array(6); // 2 punkty * 3 współrzędne (x,y,z)
+        const colors = new Float32Array(6);    // 2 punkty * 3 składowe (r,g,b)
+        
         geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        
         const line = new THREE.Line(geo, lineMat);
         edgeGroup.add(line);
         lineGeometries.push(geo);
@@ -141,7 +161,6 @@ function load24Cell() {
     buildThreeObjects();
 }
 
-// --- 4. 16-KOMÓRKA ---
 function load16Cell() {
     clearGeometry(0.045);
     verticesND = [
@@ -377,7 +396,7 @@ function load120Cell() {
     buildThreeObjects();
 }
 
-// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
+// --- PROJEKCJA I RENDEROWANIE ND -> 3D Z PARAMETRAMI GŁĘBI ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 11);
@@ -385,7 +404,6 @@ function projectND() {
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // 1. Rotacje wyższych wymiarów
         if (currentObject === 7) {
             let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
             let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
@@ -399,7 +417,6 @@ function projectND() {
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
         }
 
-        // 2. Blokada osi obrotu dla Teseraktu (tylko czysty obrót w płaszczyźnie XW jak na Wiki)
         let factorXW = 1.0;
         let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
 
@@ -409,7 +426,6 @@ function projectND() {
         let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
-        // 3. Rzutowanie perspektywiczne do 3D
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; }
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
@@ -427,16 +443,59 @@ function projectND() {
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
+    // --- DYNAMICZNE KALKULOWANIE ENHANCED 3D DEPTH ---
+    
+    // 1. Aktualizacja sfer (Wierzchołków) z gradientem jasności na bazie pozycji Z
     for(let i = 0; i < spheres.length; i++) {
-        if(projectedVertices[i]) spheres[i].position.copy(projectedVertices[i]);
+        if(projectedVertices[i]) {
+            spheres[i].position.copy(projectedVertices[i]);
+            
+            // Pozycja wierzchołka w globalnej przestrzeni uwzględniając rotację grupy
+            const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
+            
+            // Mapowanie głębokości (zazwyczaj od ok -1.5 do 1.5 dla naszych skal) na przedział 0-1
+            let depthFactor = (worldPos.z + 1.2) / 2.4; 
+            depthFactor = Math.max(0, Math.min(1, depthFactor)); // Clamp do 0-1
+            
+            // Dynamiczna zmiana koloru wierzchołków: Przód = Jasny błękit/cyan, Tył = Głęboki, ciemny turkus
+            spheres[i].material.color.setRGB(
+                0.1 + depthFactor * 0.9, 
+                0.6 + depthFactor * 0.4, 
+                0.8 + depthFactor * 0.2
+            );
+            // Sfery z przodu stają się lekko samooświetlone (emissive)
+            if(spheres[i].material.emissive) {
+                spheres[i].material.emissive.setRGB(0, depthFactor * 0.5, depthFactor * 0.4);
+            }
+        }
     }
+
+    // 2. Aktualizacja linii (Krawędzi) z cieniowaniem końców (Vertex Colors)
     edges.forEach((edge, index) => {
         const geo = lineGeometries[index];
         if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
             const posAttr = geo.attributes.position;
-            posAttr.setXYZ(0, projectedVertices[edge[0]].x, projectedVertices[edge[0]].y, projectedVertices[edge[0]].z);
-            posAttr.setXYZ(1, projectedVertices[edge[1]].x, projectedVertices[edge[1]].y, projectedVertices[edge[1]].z);
+            const colAttr = geo.attributes.color;
+            
+            const pA = projectedVertices[edge[0]];
+            const pB = projectedVertices[edge[1]];
+            
+            posAttr.setXYZ(0, pA.x, pA.y, pA.z);
+            posAttr.setXYZ(1, pB.x, pB.y, pB.z);
             posAttr.needsUpdate = true;
+            
+            // Wyliczenie pozycji światowych obu końców krawędzi, by zredukować kolor końca z tyłu
+            const wA = pA.clone().applyEuler(edgeGroup.rotation);
+            const wB = pB.clone().applyEuler(edgeGroup.rotation);
+            
+            let depthA = Math.max(0, Math.min(1, (wA.z + 1.2) / 2.4));
+            let depthB = Math.max(0, Math.min(1, (wB.z + 1.2) / 2.4));
+            
+            // Przypisanie koloru RGB dla pierwszego wierzchołka krawędzi (pA)
+            colAttr.setXYZ(0, 0.0, depthA * 0.9 + 0.1, depthA * 0.8 + 0.2);
+            // Przypisanie koloru RGB dla drugiego wierzchołka krawędzi (pB)
+            colAttr.setXYZ(1, 0.0, depthB * 0.9 + 0.1, depthB * 0.8 + 0.2);
+            colAttr.needsUpdate = true;
         }
     });
 }
@@ -451,7 +510,7 @@ function animate() {
     projectND();
 
     if (currentObject === 1) {
-        // Idealny, statyczny rzut izometryczny 3D (zamrożone osie X, Y, Z dla klatki sześcianu)
+        // Stabilny widok izometryczny z Wikipedii
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
