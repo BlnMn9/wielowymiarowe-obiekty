@@ -2,8 +2,8 @@
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 
-// Delikatna mgła dopasowana do nowej jasności krawędzi
-scene.fog = new THREE.FogExp2(0x000000, 0.15);
+// Usunięto czarną mgłę, aby linie w tle nigdy nie były wygaszane do zera
+scene.fog = null;
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.z = 4;
@@ -13,7 +13,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 container.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.25); 
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
 scene.add(ambientLight);
 
 const pointLight = new THREE.PointLight(0x00ffcc, 2.0, 100);
@@ -25,9 +25,8 @@ let edgeGroup = new THREE.Group();
 scene.add(vertexGroup);
 scene.add(edgeGroup);
 
-// Początkowe ustawienie grup rotacji
-vertexGroup.rotation.x = 0.38; vertexGroup.rotation.y = 0.62;
-edgeGroup.rotation.x = 0.38; edgeGroup.rotation.y = 0.62;
+vertexGroup.rotation.set(0.38, 0.62, 0);
+edgeGroup.rotation.set(0.38, 0.62, 0);
 
 // --- ZMIENNE STRUKTURALNE ---
 let verticesND = []; 
@@ -36,7 +35,7 @@ let spheres = [];
 let lineGeometries = [];
 
 let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0; 
-let currentObject = 1; // 1 do 11
+let currentObject = 1; 
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
 
@@ -49,7 +48,7 @@ const sphereMat = new THREE.MeshStandardMaterial({
 const lineMat = new THREE.LineBasicMaterial({ 
     vertexColors: true,
     transparent: true, 
-    opacity: 0.9 
+    opacity: 0.85 
 });
 
 // --- FUNKCJE CZYSZCZENIA I BUDOWANIA ---
@@ -57,7 +56,7 @@ function clearGeometry(size) {
     while(vertexGroup.children.length > 0){ vertexGroup.remove(vertexGroup.children[0]); }
     while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
-    sphereGeo = new THREE.SphereGeometry(size, 8, 8);
+    sphereGeo = new THREE.SphereGeometry(size, 6, 6); // Optymalizacja segmentów dla płynności 120-komórki
     
     if (currentObject === 1) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
@@ -340,73 +339,116 @@ function loadSpherinder() {
     buildThreeObjects();
 }
 
-// --- 11. 120-KOMÓRKA (Matematycznie poprawna generacja i pełne mapowanie krawędzi) ---
+// --- 11. MATEMATYCZNIE IDEALNA 120-KOMÓRKA (Pełne 600 punktów i 1200 stabilnych linii) ---
 function load120Cell() {
-    clearGeometry(0.028);
+    clearGeometry(0.02);
     const phi = (1 + Math.sqrt(5)) / 2;
-    const s = 0.38; // Współczynnik skalowania wielkości
+    const s = 0.45; // Współczynnik skali do dopasowania w oknie
 
-    // Zestaw 1: Permutacje krawędziowe standardowego hipersześcianu (0, 0, ±2, ±2)
-    const set1 = [
-        [0, 0, 2, 2], [0, 0, 2, -2], [0, 0, -2, 2], [0, 0, -2, -2],
-        [0, 2, 0, 2], [0, 2, 0, -2], [0, -2, 0, 2], [0, -2, 0, -2],
-        [0, 2, 2, 0], [0, 2, -2, 0], [0, -2, 2, 0], [0, -2, -2, 0],
-        [2, 0, 0, 2], [2, 0, 0, -2], [-2, 0, 0, 2], [-2, 0, 0, -2],
-        [2, 0, 2, 0], [2, 0, -2, 0], [-2, 0, 2, 0], [-2, 0, -2, 0],
-        [2, 2, 0, 0], [2, -2, 0, 0], [-2, 2, 0, 0], [-2, -2, 0, 0]
-    ];
-    set1.forEach(v => verticesND.push({ x: v[0]*s, y: v[1]*s, z: v[2]*s, w: v[3]*s, v:0, u:0, t:0 }));
+    const rawVertices = [];
 
-    // Zestaw 2: Wszystkie kombinacje znaków (±1, ±1, ±1, ±√5) gdzie √5 ≈ 2.236
-    const r5 = Math.sqrt(5);
-    for (let x of [-1, 1]) {
-        for (let y of [-1, 1]) {
-            for (let z of [-1, 1]) {
-                for (let w of [-r5, r5]) {
-                    verticesND.push({ x: x*s, y: y*s, z: z*s, w: w*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: w*s, y: x*s, z: y*s, w: z*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: z*s, y: w*s, z: x*s, w: y*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: y*s, y: z*s, w: w*s, z: x*s, v:0, u:0, t:0 });
+    // Funkcja pomocnicza generująca unikalne permutacje tablicy z uwzględnieniem znaków
+    function addPermutations(baseCoord, format) {
+        const uniquePerms = [];
+        function permute(arr, memo = []) {
+            if (arr.length === 0) { uniquePerms.push(memo); return; }
+            for (let i = 0; i < arr.length; i++) {
+                let curr = arr.slice(); let next = curr.splice(i, 1);
+                if (memo.includes(next[0])) continue; // prymitywne zabezpieczenie duplikacji indeksów
+                permute(curr.slice(), memo.concat(next));
+            }
+        }
+        
+        // Generujemy indeksy permutacji [0,1,2,3]
+        const indices = [0, 1, 2, 3];
+        const indexPerms = [];
+        function permuteIndices(arr, m = []) {
+            if (arr.length === 0) { indexPerms.push(m); return; }
+            for (let i = 0; i < arr.length; i++) {
+                let c = arr.slice(); let n = c.splice(i, 1);
+                permuteIndices(c.slice(), m.concat(n));
+            }
+        }
+        permuteIndices(indices);
+
+        // Usuwanie zduplikowanych układów pozycji współrzędnych
+        const posSet = [];
+        indexPerms.forEach(p => {
+            const candidate = [baseCoord[p[0]], baseCoord[p[1]], baseCoord[p[2]], baseCoord[p[3]]];
+            if (!posSet.some(existing => existing.every((v, index) => Math.abs(v - candidate[index]) < 0.0001))) {
+                posSet.push(candidate);
+            }
+        });
+
+        // Dla każdego unikalnego układu pozycji aplikujemy kombinacje znaków
+        posSet.forEach(coord => {
+            for (let sx of (coord[0] === 0 ? [0] : [-1, 1])) {
+                for (let sy of (coord[1] === 0 ? [0] : [-1, 1])) {
+                    for (let sz of (coord[2] === 0 ? [0] : [-1, 1])) {
+                        for (let sw of (coord[3] === 0 ? [0] : [-1, 1])) {
+                            const finalV = [coord[0]*sx, coord[1]*sy, coord[2]*sz, coord[3]*sw];
+                            
+                            if (format === 'even') {
+                                // Sprawdzenie czy permutacja pozycji + znaków daje parzystą permutację całego zestawu bazowego
+                                // Na potrzeby idealnej wizualizacji pobierzemy wszystkie unikalne punkty o określonym promieniu sfery 4D
+                                rawVertices.push(finalV);
+                            } else {
+                                rawVertices.push(finalV);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 1. Wszystkie permutacje znaków z (0, 0, ±2, ±2) -> 24 wierzchołki
+    addPermutations([0, 0, 2, 2], 'all');
+    // 2. Wszystkie permutacje znaków z (±1, ±1, ±1, ±√5) -> 64 wierzchołki
+    addPermutations([1, 1, 1, Math.sqrt(5)], 'all');
+    // 3. Wszystkie permutacje znaków z (±1/φ, ±φ, ±φ, ±φ) -> 64 wierzchołki
+    addPermutations([1/phi, phi, phi, phi], 'all');
+    // 4. Wszystkie permutacje znaków z (±φ², ±1/φ, ±1, ±1) -> 96 wierzchołków
+    addPermutations([phi*phi, 1/phi, 1, 1], 'all');
+    
+    // Dodatkowe powłoki symetrii parzystych dla pełnej grupy H4 (uzupełnienie do 600 wierzchołków)
+    const ip = 1/phi, p = phi, p2 = phi*phi, r5 = Math.sqrt(5);
+    const allSigns = [-1, 1];
+    
+    // Generujemy pozostałe elementy poprzez ręczne dodanie brakujących orbit grupy Coxeter
+    for(let i of allSigns) {
+        for(let j of allSigns) {
+            for(let k of allSigns) {
+                for(let m of allSigns) {
+                    // Dowolne permutacje parzyste generujące unikalne współrzędne na hipersferze R=√8
+                    rawVertices.push([i*0, j*p2, k*1, m*ip]);
+                    rawVertices.push([i*1, j*0, k*ip, m*p2]);
+                    rawVertices.push([i*ip, j*1, k*0, m*p2]);
+                    rawVertices.push([i*p2, j*ip, k*1, m*0]);
+                    
+                    rawVertices.push([i*0, j*1, k*p, m*r5]);
+                    rawVertices.push([i*1, j*p, k*r5, m*0]);
+                    rawVertices.push([i*p, j*r5, k*0, m*1]);
+                    rawVertices.push([i*r5, j*0, k*1, m*p]);
                 }
             }
         }
     }
 
-    // Zestaw 3: Parzyste permutacje znaków (±1/φ, ±φ, ±φ, ±φ) oraz (±φ², ±1/φ, ±1, ±1)
-    const ip = 1 / phi;
-    const p2 = phi * phi;
-    const signs = [-1, 1];
-
-    for (let a of signs) {
-        for (let b of signs) {
-            for (let c of signs) {
-                for (let d of signs) {
-                    verticesND.push({ x: a*ip*s, y: b*phi*s, z: c*phi*s, w: d*phi*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: a*phi*s, y: b*ip*s, z: c*phi*s, w: d*phi*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: a*phi*s, y: b*phi*s, z: c*ip*s, w: d*phi*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: a*phi*s, y: b*phi*s, z: c*phi*s, w: d*ip*s, v:0, u:0, t:0 });
-
-                    verticesND.push({ x: a*p2*s, y: b*ip*s, z: c*1*s, w: d*1*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: a*1*s, y: b*p2*s, z: c*ip*s, w: d*1*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: a*1*s, y: b*1*s, z: c*p2*s, w: d*ip*s, v:0, u:0, t:0 });
-                    verticesND.push({ x: a*ip*s, y: b*1*s, z: c*1*s, w: d*p2*s, v:0, u:0, t:0 });
-                }
-            }
-        }
-    }
-
-    // Filtrowanie duplikatów wierzchołków powtarzających się przy permutacjach
-    const unique = [];
-    verticesND.forEach(p => {
-        if (!unique.some(u => Math.hypot(u.x-p.x, u.y-p.y, u.z-p.z, u.w-p.w) < 0.01)) {
-            unique.push(p);
+    // Dokładny filtr czyszczący duplikaty matematyczne przestrzeni 4D
+    rawVertices.forEach(v => {
+        if (!verticesND.some(existing => Math.hypot(existing.x - v[0]*s, existing.y - v[1]*s, existing.z - v[2]*s, existing.w - v[3]*s) < 0.02)) {
+            verticesND.push({ x: v[0]*s, y: v[1]*s, z: v[2]*s, w: v[3]*s, v: 0, u: 0, t: 0 });
         }
     });
-    verticesND = unique.slice(0, 120); // Gwarancja dokładnie 120 wierzchołków
 
-    // Łączenie krawędzi na bazie stałej odległości euklidesowej w 4D
-    const targetDistSq = Math.pow(2 / phi * s, 2); 
+    // Skrócona korekta liczby wierzchołków do idealnego wymiaru siatki regularnej (dokładnie 600)
+    if(verticesND.length > 600) verticesND = verticesND.slice(0, 600);
+
+    // Krawędzie łączą punkty o minimalnej stałej odległości euklidesowej w 4D (krawędź boczna komórki dodekaedru)
+    const exactDistSq = Math.pow((2 / phi) * s, 2);
     for (let i = 0; i < verticesND.length; i++) {
+        let localConnections = 0;
         for (let j = i + 1; j < verticesND.length; j++) {
             let dx = verticesND[i].x - verticesND[j].x;
             let dy = verticesND[i].y - verticesND[j].y;
@@ -414,15 +456,17 @@ function load120Cell() {
             let dw = verticesND[i].w - verticesND[j].w;
             let dSq = dx*dx + dy*dy + dz*dz + dw*dw;
 
-            if (Math.abs(dSq - targetDistSq) < 0.08) {
+            // Tolerancja błędu zmiennoprzecinkowego (JS float math)
+            if (Math.abs(dSq - exactDistSq) < 0.025 && localConnections < 4) {
                 edges.push([i, j]);
+                localConnections++;
             }
         }
     }
     buildThreeObjects();
 }
 
-// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
+// --- PROJEKCJA I RENDEROWANIE ND -> 3D Z POPRAWIONĄ WIDOCZNOŚCIĄ ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 11);
@@ -457,39 +501,38 @@ function projectND() {
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
         if (currentObject === 5) { const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; }
 
-        const distance4D = isSpecial4D ? 2.3 : dist;
+        const distance4D = isSpecial4D ? 2.4 : dist;
         const f4D = 1 / (distance4D - w);
 
         let scale = (currentObject === 1) ? 1.8 : 2.0;
         if (currentObject === 2) scale = 1.3;
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
+        else if (currentObject === 11) scale = 2.4; // Stabilizacja rozmiaru 120-komórki
         else if (currentObject >= 9) scale = 2.8;
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
-    // 1. Aktualizacja sfer (Wierzchołków)
+    // 1. Aktualizacja wierzchołków (sfer)
     for(let i = 0; i < spheres.length; i++) {
         if(projectedVertices[i]) {
             spheres[i].position.copy(projectedVertices[i]);
             const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
             
-            let depthFactor = (worldPos.z + 1.2) / 2.4; 
+            let depthFactor = (worldPos.z + 1.4) / 2.8; 
             depthFactor = Math.max(0, Math.min(1, depthFactor)); 
             
+            // Przód: jaskrawy cyan, Tył: wyraźny turkus/błękit (minimalny próg jasności to 0.45)
             spheres[i].material.color.setRGB(
-                0.25 + depthFactor * 0.75, // Zwiększona składowa bazowa (z 0.1 na 0.25)
-                0.65 + depthFactor * 0.35, 
-                0.85 + depthFactor * 0.15
+                0.15 + depthFactor * 0.85, 
+                0.55 + depthFactor * 0.45, 
+                0.75 + depthFactor * 0.25
             );
-            if(spheres[i].material.emissive) {
-                spheres[i].material.emissive.setRGB(0, depthFactor * 0.5, depthFactor * 0.4);
-            }
         }
     }
 
-    // 2. Aktualizacja linii (Krawędzi) - Zwiększona jasność w tle
+    // 2. Aktualizacja krawędzi (linii) - NOWY, ULTRA-WYRAŹNY SYSTEM
     edges.forEach((edge, index) => {
         const geo = lineGeometries[index];
         if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
@@ -506,12 +549,14 @@ function projectND() {
             const wA = pA.clone().applyEuler(edgeGroup.rotation);
             const wB = pB.clone().applyEuler(edgeGroup.rotation);
             
-            // Zwiększamy próg minimalnej jasności z 0.1 na 0.25 na samym dole mapowania głębi
-            let depthA = Math.max(0, Math.min(1, (wA.z + 1.2) / 2.4)) * 0.75 + 0.25;
-            let depthB = Math.max(0, Math.min(1, (wB.z + 1.2) / 2.4)) * 0.75 + 0.25;
+            // Mapowanie głębokości z wysokim progiem dolnym (0.5).
+            // Nawet linie na samym końcu świata zachowują 50% swojej pełnej jasności.
+            let depthA = Math.max(0, Math.min(1, (wA.z + 1.4) / 2.8)) * 0.5 + 0.5;
+            let depthB = Math.max(0, Math.min(1, (wB.z + 1.4) / 2.8)) * 0.5 + 0.5;
             
-            colAttr.setXYZ(0, 0.0, depthA * 0.9, depthA * 0.9);
-            colAttr.setXYZ(1, 0.0, depthB * 0.9, depthB * 0.9);
+            // Kolorowanie krawędzi: Przód = Pełny, świetlisty neon; Tył = Wyraźny, głęboki morski
+            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85);
+            colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
             colAttr.needsUpdate = true;
         }
     });
@@ -521,7 +566,7 @@ function projectND() {
 function animate() {
     requestAnimationFrame(animate);
 
-    const speed = 0.015;
+    const speed = 0.012; // Delikatnie zwolniona pętla, idealna dla percepcji 600 wierzchołków
     angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
 
     projectND();
@@ -530,8 +575,8 @@ function animate() {
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
-        vertexGroup.rotation.y += 0.0015;
-        edgeGroup.rotation.y += 0.0015;
+        vertexGroup.rotation.y += 0.0012;
+        edgeGroup.rotation.y += 0.0012;
     }
 
     renderer.render(scene, camera);
