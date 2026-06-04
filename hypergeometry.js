@@ -370,7 +370,7 @@ function load5DHypercube() {
         for (let j = i + 1; j < 32; j++) {
             let diff = 0;
             if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++; // TUTAJ: było verticesND[j].j
+            if (verticesND[i].y !== verticesND[j].y) diff++; 
             if (verticesND[i].z !== verticesND[j].z) diff++;
             if (verticesND[i].w !== verticesND[j].w) diff++;
             if (verticesND[i].v !== verticesND[j].v) diff++;
@@ -379,7 +379,6 @@ function load5DHypercube() {
     }
     buildThreeObjects();
 }
-
 
 // --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
@@ -431,13 +430,9 @@ function projectND() {
         else if (currentObject === 5) scale = 1.7;
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
-        else if (currentObject === 11) scale = 2.4; // delikatna korekta widoczności
-        else if (currentObject === 12) scale = 2.3; // delikatna korekta widoczności
+        else if (currentObject === 11) scale = 2.4; 
+        else if (currentObject === 12) scale = 2.3; 
         else if (currentObject >= 9) scale = 2.8;
-
-        projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
-    });
-
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
