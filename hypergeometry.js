@@ -156,7 +156,6 @@ function load24Cell() {
     buildThreeObjects();
 }
 
-// Obiekt 4: 16-Komórka
 function load16Cell() {
     clearGeometry(0.045);
     verticesND = [
@@ -283,25 +282,47 @@ function loadHyperPyramid() {
     buildThreeObjects();
 }
 
+// NAPRAWIONO: Przywrócono piękną, gęstą strukturę 4D dla Butelki Kleina
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 24; const stepsV = 5; 
+    const stepsU = 36; 
+    const stepsV = 36; 
+
     for (let i = 0; i < stepsU; i++) {
-        let u = (i / stepsU) * Math.PI * 2;
+        let u = (i / stepsU) * Math.PI; 
         for (let j = 0; j < stepsV; j++) {
-            let v = (j / stepsV) * Math.PI * 2;
-            let x = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.cos(u) * 0.5;
-            let y = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.sin(u) * 0.5;
-            let z = (Math.sin(u / 2) * Math.sin(v) + Math.cos(u / 2) * Math.sin(2 * v)) * 0.5;
-            let w = (Math.cos(v) * (1 + Math.sin(u))) * 0.3;
-            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
+            let v = (j / stepsV) * Math.PI * 2; 
+
+            let x, y, z, w;
+
+            if (u < Math.PI / 2) {
+                x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(u) * Math.cos(v);
+                z = -8 * Math.sin(u) - 2 * (1 - Math.cos(u) / 2) * Math.sin(u) * Math.cos(v);
+            } else {
+                x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(v + Math.PI);
+                z = -8 * Math.sin(u);
+            }
+
+            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
+            w = Math.sin(2 * u) * Math.cos(v) * 1.5;
+
+            const scaleFactor = 0.18; 
+            
+            verticesND.push({ 
+                x: x * scaleFactor, 
+                y: y * scaleFactor, 
+                z: (z + 3.5) * scaleFactor, 
+                w: w * scaleFactor, 
+                v: 0, u: 0, t: 0 
+            });
         }
     }
+
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            edges.push([current, i * stepsV + ((j + 1) % stepsV)]);
-            edges.push([current, ((i + 1) % stepsU) * stepsV + j]);
+            let nextV = i * stepsV + ((j + 1) % stepsV); edges.push([current, nextV]);
+            let nextU = ((i + 1) % stepsU) * stepsV + j; edges.push([current, nextU]);
         }
     }
     buildThreeObjects();
@@ -333,16 +354,11 @@ function load5DCrossPolytope() {
     clearGeometry(0.045);
     const r = 1.2; 
     verticesND = [
-        { x:  r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x: -r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  r, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y: -r, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  r, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y: -0, z: -r, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  r, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w: -r, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  0, v:  r, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  0, v: -r, u: 0, t: 0 }
+        { x:  r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 }, { x: -r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y:  r, z:  0, w:  0, v:  0, u: 0, t: 0 }, { x:  0, y: -r, z:  0, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y:  0, z:  r, w:  0, v:  0, u: 0, t: 0 }, { x:  0, y: -0, z: -r, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y:  0, z:  0, w:  r, v:  0, u: 0, t: 0 }, { x:  0, y:  0, z:  0, w: -r, v:  0, u: 0, t: 0 },
+        { x:  0, y:  0, z:  0, w:  0, v:  r, u: 0, t: 0 }, { x:  0, y:  0, z:  0, w:  0, v: -r, u: 0, t: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
@@ -356,28 +372,22 @@ function load5DCrossPolytope() {
 function load5DHypercube() {
     clearGeometry(0.035);
     for (let i = 0; i < 32; i++) {
-        let x = (i & 1)  ? 0.65 : -0.65;
-        let y = (i & 2)  ? 0.65 : -0.65;
-        let z = (i & 4)  ? 0.65 : -0.65;
-        let w = (i & 8)  ? 0.65 : -0.65;
+        let x = (i & 1)  ? 0.65 : -0.65; let y = (i & 2)  ? 0.65 : -0.65;
+        let z = (i & 4)  ? 0.65 : -0.65; let w = (i & 8)  ? 0.65 : -0.65;
         let v = (i & 16) ? 0.65 : -0.65;
         verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: 0, t: 0 });
     }
     for (let i = 0; i < 32; i++) {
         for (let j = i + 1; j < 32; j++) {
             let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++; 
-            if (verticesND[i].z !== verticesND[j].z) diff++;
-            if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++;
-            if (diff === 1) edges.push([i, j]);
+            if (verticesND[i].x !== verticesND[j].x) diff++; if (verticesND[i].y !== verticesND[j].y) diff++; 
+            if (verticesND[i].z !== verticesND[j].z) diff++; if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++; if (diff === 1) edges.push([i, j]);
         }
     }
     buildThreeObjects();
 }
 
-// NAPRAWIONO: Dodano brakujący generator obiektu 13 (Duocylinder)
 function loadDuocylinder() {
     clearGeometry(0.028); 
     const stepsU = 20; const stepsV = 20; 
@@ -402,7 +412,6 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
@@ -483,7 +492,6 @@ function projectND() {
     });
 }
 
-// --- GLOBALNA PĘTLA ANIMACJI ---
 function animate() {
     requestAnimationFrame(animate);
     const speed = 0.012; 
@@ -498,10 +506,9 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 13) currentObject = 1; // NAPRAWIONO: Zmieniono z 12 na 13
+    if (currentObject > 13) currentObject = 1;
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -516,12 +523,11 @@ function switchObject() {
         case 10: loadSpherinder(); break;
         case 11: load5DCrossPolytope(); break; 
         case 12: load5DHypercube(); break;     
-        case 13: loadDuocylinder(); break; // NAPRAWIONO: Dodano brakujący obiekt w switchu
+        case 13: loadDuocylinder(); break; 
     }
     return currentObject;
 }
 
-// Start aplikacji
 loadTesseract();
 animate();
 
