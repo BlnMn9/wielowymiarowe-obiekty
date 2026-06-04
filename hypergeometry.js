@@ -21,9 +21,9 @@ let edgeGroup = new THREE.Group();
 scene.add(vertexGroup);
 scene.add(edgeGroup);
 
-// Początkowe pochylenie widoku dla lepszej perspektywy 3D
-vertexGroup.rotation.x = 0.5; vertexGroup.rotation.y = 0.5;
-edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
+// Początkowe ustawienie grup rotacji
+vertexGroup.rotation.x = 0.38; vertexGroup.rotation.y = 0.62;
+edgeGroup.rotation.x = 0.38; edgeGroup.rotation.y = 0.62;
 
 // --- ZMIENNE STRUKTURALNE ---
 let verticesND = []; 
@@ -45,9 +45,14 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 6, 6);
     
-    // Reset rotacji 3D przy zmianie obiektu na domyślne wartości geometryczne
-    vertexGroup.rotation.x = 0.5; vertexGroup.rotation.y = 0.5;
-    edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
+    // Reset rotacji 3D do domyślnych stanów wyjściowych dla nowych obiektów
+    if (currentObject === 1) {
+        vertexGroup.rotation.set(0.38, 0.62, 0);
+        edgeGroup.rotation.set(0.38, 0.62, 0);
+    } else {
+        vertexGroup.rotation.set(0.5, 0.5, 0);
+        edgeGroup.rotation.set(0.5, 0.5, 0);
+    }
 }
 
 function buildThreeObjects() {
@@ -136,6 +141,7 @@ function load24Cell() {
     buildThreeObjects();
 }
 
+// --- 4. 16-KOMÓRKA ---
 function load16Cell() {
     clearGeometry(0.045);
     verticesND = [
@@ -379,44 +385,41 @@ function projectND() {
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // 1. Rotacja 7D
+        // 1. Rotacje wyższych wymiarów
         if (currentObject === 7) {
             let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
             let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
         }
-        // 2. Rotacja 6D
         if (currentObject >= 6 && !isSpecial4D) {
             let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
             let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
         }
-        // 3. Rotacja 5D
         if (currentObject >= 5 && !isSpecial4D) {
             let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
         }
 
-        // 4. Rotacje w płaszczyznach 4D
-        let factor4D = (currentObject === 1) ? 0.15 : 1.0; 
+        // 2. Blokada osi obrotu dla Teseraktu (tylko czysty obrót w płaszczyźnie XW jak na Wiki)
+        let factorXW = 1.0;
+        let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
 
-        let cosXW = Math.cos(angleXW * factor4D), sinXW = Math.sin(angleXW * factor4D);
+        let cosXW = Math.cos(angleXW * factorXW), sinXW = Math.sin(angleXW * factorXW);
         let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
 
-        let cosYW = Math.cos(angleYW * factor4D), sinYW = Math.sin(angleYW * factor4D);
+        let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
-        // 5. Wielopoziomowe rzutowanie perspektywiczne do 3D
+        // 3. Rzutowanie perspektywiczne do 3D
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; }
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
         if (currentObject === 5) { const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; }
 
-        // Rzut ostateczny z 4D
-        const distance4D = (currentObject === 1) ? 2.5 : (isSpecial4D ? 2.3 : dist);
+        const distance4D = isSpecial4D ? 2.3 : dist;
         const f4D = 1 / (distance4D - w);
 
-        let scale = 2.0;
-        if (currentObject === 1) scale = 2.4; 
-        else if (currentObject === 2) scale = 1.3;
+        let scale = (currentObject === 1) ? 1.8 : 2.0;
+        if (currentObject === 2) scale = 1.3;
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
         else if (currentObject >= 9) scale = 2.8;
@@ -442,19 +445,17 @@ function projectND() {
 function animate() {
     requestAnimationFrame(animate);
 
-    const speed = 0.008;
-    angleXW += speed; angleYW += speed * 0.6; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
+    const speed = 0.015;
+    angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
 
     projectND();
 
     if (currentObject === 1) {
-        // Dynamiczny i czytelny obrót 3D dla Teseraktu
-        vertexGroup.rotation.y += 0.012;
-        vertexGroup.rotation.x += 0.006;
-        edgeGroup.rotation.y += 0.012;
-        edgeGroup.rotation.x += 0.006;
+        // Idealny, statyczny rzut izometryczny 3D (zamrożone osie X, Y, Z dla klatki sześcianu)
+        vertexGroup.rotation.set(0.38, 0.62, 0);
+        edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
-        // Delikatny obrót wokół osi Y dla zachowania trójwymiarowości pozostałych figur
+        // Dynamiczny obrót 3D dla prezentacji pozostałych figur wielowymiarowych
         vertexGroup.rotation.y += 0.0015;
         edgeGroup.rotation.y += 0.0015;
     }
@@ -462,7 +463,7 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW (WYWOŁYWANA Z HTML) ---
+// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
     if (currentObject > 11) currentObject = 1;
