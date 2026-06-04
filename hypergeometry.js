@@ -414,18 +414,16 @@ function load5DHypercube() {
 
 function loadDuocylinder() {
     clearGeometry(0.022);
-    const stepsU = 20; // gęstość pierwszego pierścienia
-    const stepsV = 20; // gęstość drugiego pierścienia
+    const stepsU = 20; 
+    const stepsV = 20; 
     const r1 = 0.8;    
     const r2 = 0.8;
 
-    // Generowanie wierzchołków jako iloczyn kartezjański dwóch okręgów
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI * 2;
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2;
             
-            // Wymiary 4D: (x,y) to pierwszy okrąg, (z,w) to drugi okrąg
             let x = r1 * Math.cos(u);
             let y = r1 * Math.sin(u);
             let z = r2 * Math.cos(v);
@@ -435,22 +433,23 @@ function loadDuocylinder() {
         }
     }
 
-    // Tworzenie krawędzi (siatka łącząca oba wymiary obrotu)
+    // KOMPLETNE TWORZENIE KRAWĘDZI DLA OBU OKRĘGÓW:
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
             
-            // Połączenie wzdłuż pierwszego okręgu (U)
+            // Połączenie wzdłuż pierwszego okręgu (U) - domknięcie pierścienia głównego
             let nextU = ((i + 1) % stepsU) * stepsV + j;
             edges.push([current, nextU]);
             
-            // Połączenie wzdłuż drugiego okręgu (V)
+            // Połączenie wzdłuż drugiego okręgu (V) - domknięcie pierścienia pobocznego
             let nextV = i * stepsV + ((j + 1) % stepsV);
             edges.push([current, nextV]);
         }
     }
     buildThreeObjects();
 }
+
 
 
 
