@@ -34,7 +34,7 @@ let spheres = [];
 let lineGeometries = [];
 
 let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0; 
-let currentObject = 1; 
+let currentObject = 1; // Zmienna obsługuje teraz zakres 1 do 12
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
 
@@ -86,7 +86,7 @@ function buildThreeObjects() {
     });
 }
 
-// --- GENERATORY GEOMETRII (1 - 11) ---
+// --- GENERATORY GEOMETRII (1 - 12) ---
 
 function loadTesseract() {
     clearGeometry(0.04);
@@ -292,6 +292,7 @@ function loadHyperPyramid() {
     buildThreeObjects();
 }
 
+// --- 9. BUTELKA KLEINA ---
 function loadKleinBottle() {
     clearGeometry(0.025);
     const stepsU = 24; const stepsV = 5; 
@@ -316,6 +317,7 @@ function loadKleinBottle() {
     buildThreeObjects();
 }
 
+// --- 10. SPHERINDER ---
 function loadSpherinder() {
     clearGeometry(0.025);
     const stepsSphere = 30; const stepsLength = 4;  
@@ -338,12 +340,10 @@ function loadSpherinder() {
     buildThreeObjects();
 }
 
-// --- 11. NOWY OBIEKT: 5D CROSS-POLYTOPE (10 wierzchołków, 40 krawędzi, 100% połączony) ---
+// --- 11. ZAKTUALIZOWANY OBIEKT: 5D CROSS-POLYTOPE (Ortopleks 5D) ---
 function load5DCrossPolytope() {
     clearGeometry(0.045);
-    const r = 1.2; // Promień wierzchołków od środka układu
-
-    // Wierzchołki na 5 osiach symetrii (X, Y, Z, W, V) w parach dodatnia/ujemna
+    const r = 1.2; 
     verticesND = [
         { x:  r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
         { x: -r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
@@ -356,18 +356,41 @@ function load5DCrossPolytope() {
         { x:  0, y:  0, z:  0, w:  0, v:  r, u: 0, t: 0 },
         { x:  0, y:  0, z:  0, w:  0, v: -r, u: 0, t: 0 }
     ];
-
-    // Każdy punkt łączy się z każdym innym, WYKLUCZAJĄC tylko parę leżącą na tej samej osi (np. i=0 oraz j=1)
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
-            // Pary osiowe to: (0,1), (2,3), (4,5), (6,7), (8,9)
             if (i === 0 && j === 1) continue;
             if (i === 2 && j === 3) continue;
             if (i === 4 && j === 5) continue;
             if (i === 6 && j === 7) continue;
             if (i === 8 && j === 9) continue;
-
             edges.push([i, j]);
+        }
+    }
+    buildThreeObjects();
+}
+
+// --- 12. NOWY OBIEKT: 5D HYPERCUBE (Penterakt - rzut alternatywny) ---
+function load5DHypercube() {
+    clearGeometry(0.035);
+    // Generowanie 32 wierzchołków hipersześcianu 5D za pomocą kombinacji bitowych
+    for (let i = 0; i < 32; i++) {
+        let x = (i & 1)  ? 0.65 : -0.65;
+        let y = (i & 2)  ? 0.65 : -0.65;
+        let z = (i & 4)  ? 0.65 : -0.65;
+        let w = (i & 8)  ? 0.65 : -0.65;
+        let v = (i & 16) ? 0.65 : -0.65;
+        verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: 0, t: 0 });
+    }
+    // Połączenie krawędzi (linie tam, gdzie wierzchołki różnią się tylko jednym wymiarem)
+    for (let i = 0; i < 32; i++) {
+        for (let j = i + 1; j < 32; j++) {
+            let diff = 0;
+            if (verticesND[i].x !== verticesND[j].x) diff++;
+            if (verticesND[i].y !== verticesND[j].y) diff++;
+            if (verticesND[i].z !== verticesND[j].z) diff++;
+            if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++;
+            if (diff === 1) edges.push([i, j]);
         }
     }
     buildThreeObjects();
@@ -390,8 +413,8 @@ function projectND() {
             let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
         }
         
-        // Rotacja 5D (w płaszczyźnie XV) aktywna dla obiektów 5D i wyższych (obiekt 5, 6, 7 oraz nasz nowy obiekt 11)
-        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11) {
+        // Rotacja w wymiarze 5D (Płaszczyzna XV) aktywna dla obiektów 5, 6, 7, 11 oraz nowego 12
+        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
             let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
         }
@@ -409,8 +432,8 @@ function projectND() {
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; }
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
         
-        // Projekcja z wymiaru 5D (V) do 4D
-        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11) { 
+        // Perspektywa z wymiaru 5D (V) do 4D
+        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
         }
 
@@ -422,12 +445,13 @@ function projectND() {
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
         else if (currentObject === 11) scale = 2.2; 
+        else if (currentObject === 12) scale = 2.1; 
         else if (currentObject >= 9) scale = 2.8;
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
-    // 1. Aktualizacja wierzchołków (sfer)
+    // 1. Aktualizacja wierzchołków
     for(let i = 0; i < spheres.length; i++) {
         if(projectedVertices[i]) {
             spheres[i].position.copy(projectedVertices[i]);
@@ -444,7 +468,7 @@ function projectND() {
         }
     }
 
-    // 2. Aktualizacja krawędzi (linii)
+    // 2. Aktualizacja krawędzi
     edges.forEach((edge, index) => {
         const geo = lineGeometries[index];
         if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
@@ -494,7 +518,7 @@ function animate() {
 // --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 11) currentObject = 1;
+    if (currentObject > 12) currentObject = 1; // Pętla obejmuje teraz 12 elementów
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -507,7 +531,8 @@ function switchObject() {
         case 8: loadHyperPyramid(); break;
         case 9: loadKleinBottle(); break;
         case 10: loadSpherinder(); break;
-        case 11: load5DCrossPolytope(); break; // Nowa czysta figura 5D
+        case 11: load5DCrossPolytope(); break; // Opis 11: Ortopleks 5D
+        case 12: load5DHypercube(); break;     // Nowy Obiekt 12: Hipersześcian 5D
     }
     return currentObject;
 }
