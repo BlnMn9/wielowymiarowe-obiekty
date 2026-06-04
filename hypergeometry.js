@@ -284,13 +284,13 @@ function loadHyperPyramid() {
 
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 35; // gęstość siatki wokół butelki
-    const stepsV = 35; // gęstość siatki wzdłuż wysokości
+    const stepsU = 36; // Liczba kroków (parzysta zapewnia idealny podział matematyczny)
+    const stepsV = 36; 
 
     for (let i = 0; i < stepsU; i++) {
-        let u = (i / stepsU) * Math.PI; // u od 0 do pi
+        let u = (i / stepsU) * Math.PI; 
         for (let j = 0; j < stepsV; j++) {
-            let v = (j / stepsV) * Math.PI * 2; // v od 0 do 2pi
+            let v = (j / stepsV) * Math.PI * 2; 
 
             let x, y, z, w;
 
@@ -304,42 +304,37 @@ function loadKleinBottle() {
             }
 
             y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
-
-            // Wykorzystanie czwartego wymiaru (W), aby rozpleść samoprzecięcie w 4D
-            // Gdy u zbliża się do miejsca przecięcia, przesuwamy te punkty w osi W
             w = Math.sin(2 * u) * Math.cos(v) * 1.5;
 
-            // Skalowanie obiektów, aby pasowały do kadru naszej kamery
-            const scaleFactor = 0.23;
-            // Przesunięcie w osi Z, aby wycentrować obiekt w pionie
+            const scaleFactor = 0.12; 
+            
             verticesND.push({ 
                 x: x * scaleFactor, 
                 y: y * scaleFactor, 
-                z: (z + 4) * scaleFactor, 
+                z: (z + 3.5) * scaleFactor, 
                 w: w * scaleFactor, 
                 v: 0, u: 0, t: 0 
             });
         }
     }
 
-    // Tworzenie siatki krawędzi łączących punkty w rurę
+    // KOMPLETNE TWORZENIE KRAWĘDZI:
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            let nextV = i * stepsV + ((j + 1) % stepsV);
             
-            // Łączenie w pierścienie
+            // 1. Krawędzie poziome (wokół rury) - pełne domknięcie kołowe
+            let nextV = i * stepsV + ((j + 1) % stepsV);
             edges.push([current, nextV]);
             
-            // Łączenie wzdłuż wysokości (bez zamykania skrajnych końców na stałe)
-            if (i < stepsU - 1) {
-                let nextU = (i + 1) * stepsV + j;
-                edges.push([current, nextU]);
-            }
+            // 2. Krawędzie pionowe (wzdłuż wysokości) - włącznie z domknięciem z powrotem do początku
+            let nextU = ((i + 1) % stepsU) * stepsV + j;
+            edges.push([current, nextU]);
         }
     }
     buildThreeObjects();
 }
+
 
 
 function loadSpherinder() {
