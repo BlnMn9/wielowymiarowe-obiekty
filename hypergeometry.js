@@ -556,10 +556,10 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 13) currentObject = 1; // Zmienione z 12 na 13
+    // Zmieniamy z 12 na 13, aby pozwolić na załadowanie nowego obiektu
+    if (currentObject > 13) currentObject = 1; 
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -574,10 +574,11 @@ function switchObject() {
         case 10: loadSpherinder(); break;
         case 11: load5DCrossPolytope(); break; 
         case 12: load5DHypercube(); break;     
-        case 13: loadDuocylinder(); break; // NOWY OBIEKT!
+        case 13: loadDuocylinder(); break; // Sprawdź czy ten case jest dokładnie tak rozpisany
     }
     return currentObject;
 }
+
 
 
 // Start aplikacji
