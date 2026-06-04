@@ -34,7 +34,7 @@ let spheres = [];
 let lineGeometries = [];
 
 let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0; 
-let currentObject = 1; // Zmienna obsługuje teraz zakres 1 do 12
+let currentObject = 1; 
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
 
@@ -86,7 +86,7 @@ function buildThreeObjects() {
     });
 }
 
-// --- GENERATORY GEOMETRII (1 - 12) ---
+// --- GENERATORY GEOMETRII (1 - 7) ---
 
 function loadTesseract() {
     clearGeometry(0.04);
@@ -173,29 +173,19 @@ function load16Cell() {
     buildThreeObjects();
 }
 
-function loadPenterakt() {
-    clearGeometry(0.035);
-    for (let x of [-1, 1]) {
-        for (let y of [-1, 1]) {
-            for (let z of [-1, 1]) {
-                for (let w of [-1, 1]) {
-                    for (let v of [-1, 1]) {
-                        verticesND.push({x: x * 0.7, y: y * 0.7, z: z * 0.7, w: w * 0.7, v: v * 0.7, u: 0, t: 0});
-                    }
-                }
-            }
-        }
-    }
+function load5DSimplex() {
+    clearGeometry(0.05);
+    const r = 1.1;
+    verticesND = [
+        { x: r,  y: 0,  z: 0,  w: 0,  v: -0.3*r, u: 0, t: 0 },
+        { x: 0,  y: r,  z: 0,  w: 0,  v: -0.3*r, u: 0, t: 0 },
+        { x: 0,  y: 0,  z: r,  w: 0,  v: -0.3*r, u: 0, t: 0 },
+        { x: 0,  y: 0,  z: 0,  w: r,  v: -0.3*r, u: 0, t: 0 },
+        { x: 0,  y: 0,  z: 0,  w: 0,  v: 1.2*r,  u: 0, t: 0 },
+        { x: -0.4*r, y: -0.4*r, z: -0.4*r, w: -0.4*r, v: -0.3*r, u: 0, t: 0 }
+    ];
     for (let i = 0; i < verticesND.length; i++) {
-        for (let j = i + 1; j < verticesND.length; j++) {
-            let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++;
-            if (verticesND[i].z !== verticesND[j].z) diff++;
-            if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++;
-            if (diff === 1) edges.push([i, j]);
-        }
+        for (let j = i + 1; j < verticesND.length; j++) { edges.push([i, j]); }
     }
     buildThreeObjects();
 }
@@ -292,7 +282,6 @@ function loadHyperPyramid() {
     buildThreeObjects();
 }
 
-// --- 9. BUTELKA KLEINA ---
 function loadKleinBottle() {
     clearGeometry(0.025);
     const stepsU = 24; const stepsV = 5; 
@@ -317,7 +306,6 @@ function loadKleinBottle() {
     buildThreeObjects();
 }
 
-// --- 10. SPHERINDER ---
 function loadSpherinder() {
     clearGeometry(0.025);
     const stepsSphere = 30; const stepsLength = 4;  
@@ -340,7 +328,6 @@ function loadSpherinder() {
     buildThreeObjects();
 }
 
-// --- 11. ZAKTUALIZOWANY OBIEKT: 5D CROSS-POLYTOPE (Ortopleks 5D) ---
 function load5DCrossPolytope() {
     clearGeometry(0.045);
     const r = 1.2; 
@@ -369,10 +356,8 @@ function load5DCrossPolytope() {
     buildThreeObjects();
 }
 
-// --- 12. NOWY OBIEKT: 5D HYPERCUBE (Penterakt - rzut alternatywny) ---
 function load5DHypercube() {
     clearGeometry(0.035);
-    // Generowanie 32 wierzchołków hipersześcianu 5D za pomocą kombinacji bitowych
     for (let i = 0; i < 32; i++) {
         let x = (i & 1)  ? 0.65 : -0.65;
         let y = (i & 2)  ? 0.65 : -0.65;
@@ -381,7 +366,6 @@ function load5DHypercube() {
         let v = (i & 16) ? 0.65 : -0.65;
         verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: 0, t: 0 });
     }
-    // Połączenie krawędzi (linie tam, gdzie wierzchołki różnią się tylko jednym wymiarem)
     for (let i = 0; i < 32; i++) {
         for (let j = i + 1; j < 32; j++) {
             let diff = 0;
@@ -413,7 +397,6 @@ function projectND() {
             let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
         }
         
-        // Rotacja w wymiarze 5D (Płaszczyzna XV) aktywna dla obiektów 5, 6, 7, 11 oraz nowego 12
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
             let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
@@ -432,7 +415,6 @@ function projectND() {
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; }
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
         
-        // Perspektywa z wymiaru 5D (V) do 4D
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
         }
@@ -442,6 +424,7 @@ function projectND() {
 
         let scale = (currentObject === 1) ? 1.8 : 2.0;
         if (currentObject === 2) scale = 1.3;
+        else if (currentObject === 5) scale = 1.7;
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
         else if (currentObject === 11) scale = 2.2; 
@@ -451,45 +434,26 @@ function projectND() {
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
-    // 1. Aktualizacja wierzchołków
     for(let i = 0; i < spheres.length; i++) {
         if(projectedVertices[i]) {
             spheres[i].position.copy(projectedVertices[i]);
             const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
-            
-            let depthFactor = (worldPos.z + 1.4) / 2.8; 
-            depthFactor = Math.max(0, Math.min(1, depthFactor)); 
-            
-            spheres[i].material.color.setRGB(
-                0.15 + depthFactor * 0.85, 
-                0.55 + depthFactor * 0.45, 
-                0.75 + depthFactor * 0.25
-            );
+            let depthFactor = Math.max(0, Math.min(1, (worldPos.z + 1.4) / 2.8)); 
+            spheres[i].material.color.setRGB(0.15 + depthFactor * 0.85, 0.55 + depthFactor * 0.45, 0.75 + depthFactor * 0.25);
         }
     }
 
-    // 2. Aktualizacja krawędzi
     edges.forEach((edge, index) => {
         const geo = lineGeometries[index];
         if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
-            const posAttr = geo.attributes.position;
-            const colAttr = geo.attributes.color;
+            const posAttr = geo.attributes.position; const colAttr = geo.attributes.color;
+            const pA = projectedVertices[edge[0]]; const pB = projectedVertices[edge[1]];
+            posAttr.setXYZ(0, pA.x, pA.y, pA.z); posAttr.setXYZ(1, pB.x, pB.y, pB.z); posAttr.needsUpdate = true;
             
-            const pA = projectedVertices[edge[0]];
-            const pB = projectedVertices[edge[1]];
-            
-            posAttr.setXYZ(0, pA.x, pA.y, pA.z);
-            posAttr.setXYZ(1, pB.x, pB.y, pB.z);
-            posAttr.needsUpdate = true;
-            
-            const wA = pA.clone().applyEuler(edgeGroup.rotation);
-            const wB = pB.clone().applyEuler(edgeGroup.rotation);
-            
+            const wA = pA.clone().applyEuler(edgeGroup.rotation); const wB = pB.clone().applyEuler(edgeGroup.rotation);
             let depthA = Math.max(0, Math.min(1, (wA.z + 1.4) / 2.8)) * 0.5 + 0.5;
             let depthB = Math.max(0, Math.min(1, (wB.z + 1.4) / 2.8)) * 0.5 + 0.5;
-            
-            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85);
-            colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
+            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85); colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
             colAttr.needsUpdate = true;
         }
     });
@@ -498,41 +462,36 @@ function projectND() {
 // --- GLOBALNA PĘTLA ANIMACJI ---
 function animate() {
     requestAnimationFrame(animate);
-
     const speed = 0.012; 
     angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
-
     projectND();
 
     if (currentObject === 1) {
-        vertexGroup.rotation.set(0.38, 0.62, 0);
-        edgeGroup.rotation.set(0.38, 0.62, 0);
+        vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
-        vertexGroup.rotation.y += 0.0012;
-        edgeGroup.rotation.y += 0.0012;
+        vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
     }
-
     renderer.render(scene, camera);
 }
 
 // --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 12) currentObject = 1; // Pętla obejmuje teraz 12 elementów
+    if (currentObject > 12) currentObject = 1;
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
         case 2: loadPentachor(); break;
         case 3: load24Cell(); break;
         case 4: load16Cell(); break;
-        case 5: loadPenterakt(); break;
+        case 5: load5DSimplex(); break;       
         case 6: loadHekterakt(); break;
         case 7: loadHepterakt(); break;
         case 8: loadHyperPyramid(); break;
         case 9: loadKleinBottle(); break;
         case 10: loadSpherinder(); break;
-        case 11: load5DCrossPolytope(); break; // Opis 11: Ortopleks 5D
-        case 12: load5DHypercube(); break;     // Nowy Obiekt 12: Hipersześcian 5D
+        case 11: load5DCrossPolytope(); break; 
+        case 12: load5DHypercube(); break;     
     }
     return currentObject;
 }
