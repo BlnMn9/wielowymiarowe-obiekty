@@ -559,7 +559,7 @@ function animate() {
 // --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 12) currentObject = 1;
+    if (currentObject > 13) currentObject = 1; // Zmienione z 12 na 13
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -574,9 +574,11 @@ function switchObject() {
         case 10: loadSpherinder(); break;
         case 11: load5DCrossPolytope(); break; 
         case 12: load5DHypercube(); break;     
+        case 13: loadDuocylinder(); break; // NOWY OBIEKT!
     }
     return currentObject;
 }
+
 
 // Start aplikacji
 loadTesseract();
