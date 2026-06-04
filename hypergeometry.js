@@ -284,7 +284,7 @@ function loadHyperPyramid() {
 
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 36; // Liczba kroków (parzysta zapewnia idealny podział matematyczny)
+    const stepsU = 36; 
     const stepsV = 36; 
 
     for (let i = 0; i < stepsU; i++) {
@@ -294,7 +294,6 @@ function loadKleinBottle() {
 
             let x, y, z, w;
 
-            // Klasyczna parametryzacja geometryczna Butelki Kleina
             if (u < Math.PI / 2) {
                 x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(u) * Math.cos(v);
                 z = -8 * Math.sin(u) - 2 * (1 - Math.cos(u) / 2) * Math.sin(u) * Math.cos(v);
@@ -306,7 +305,8 @@ function loadKleinBottle() {
             y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
             w = Math.sin(2 * u) * Math.cos(v) * 1.5;
 
-            const scaleFactor = 0.12; 
+            // ZWIĘKSZONO: scaleFactor z 0.12 na 0.18, żeby butelka była wyraźna na komputerze
+            const scaleFactor = 0.18; 
             
             verticesND.push({ 
                 x: x * scaleFactor, 
@@ -318,22 +318,19 @@ function loadKleinBottle() {
         }
     }
 
-    // KOMPLETNE TWORZENIE KRAWĘDZI:
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            
-            // 1. Krawędzie poziome (wokół rury) - pełne domknięcie kołowe
             let nextV = i * stepsV + ((j + 1) % stepsV);
             edges.push([current, nextV]);
             
-            // 2. Krawędzie pionowe (wzdłuż wysokości) - włącznie z domknięciem z powrotem do początku
             let nextU = ((i + 1) % stepsU) * stepsV + j;
             edges.push([current, nextU]);
         }
     }
     buildThreeObjects();
 }
+
 
 
 
