@@ -416,6 +416,49 @@ function load5DHypercube() {
     buildThreeObjects();
 }
 
+
+function loadDuocylinder() {
+    clearGeometry(0.022);
+    const stepsU = 20; // gęstość pierwszego pierścienia
+    const stepsV = 20; // gęstość drugiego pierścienia
+    const r1 = 0.8;    
+    const r2 = 0.8;
+
+    // Generowanie wierzchołków jako iloczyn kartezjański dwóch okręgów
+    for (let i = 0; i < stepsU; i++) {
+        let u = (i / stepsU) * Math.PI * 2;
+        for (let j = 0; j < stepsV; j++) {
+            let v = (j / stepsV) * Math.PI * 2;
+            
+            // Wymiary 4D: (x,y) to pierwszy okrąg, (z,w) to drugi okrąg
+            let x = r1 * Math.cos(u);
+            let y = r1 * Math.sin(u);
+            let z = r2 * Math.cos(v);
+            let w = r2 * Math.sin(v);
+
+            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
+        }
+    }
+
+    // Tworzenie krawędzi (siatka łącząca oba wymiary obrotu)
+    for (let i = 0; i < stepsU; i++) {
+        for (let j = 0; j < stepsV; j++) {
+            let current = i * stepsV + j;
+            
+            // Połączenie wzdłuż pierwszego okręgu (U)
+            let nextU = ((i + 1) % stepsU) * stepsV + j;
+            edges.push([current, nextU]);
+            
+            // Połączenie wzdłuż drugiego okręgu (V)
+            let nextV = i * stepsV + ((j + 1) % stepsV);
+            edges.push([current, nextV]);
+        }
+    }
+    buildThreeObjects();
+}
+
+
+
 // --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
