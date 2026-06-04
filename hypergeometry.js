@@ -284,27 +284,63 @@ function loadHyperPyramid() {
 
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 24; const stepsV = 5; 
+    const stepsU = 35; // gęstość siatki wokół butelki
+    const stepsV = 35; // gęstość siatki wzdłuż wysokości
+
     for (let i = 0; i < stepsU; i++) {
-        let u = (i / stepsU) * Math.PI * 2;
+        let u = (i / stepsU) * Math.PI; // u od 0 do pi
         for (let j = 0; j < stepsV; j++) {
-            let v = (j / stepsV) * Math.PI * 2;
-            let x = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.cos(u) * 0.5;
-            let y = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.sin(u) * 0.5;
-            let z = (Math.sin(u / 2) * Math.sin(v) + Math.cos(u / 2) * Math.sin(2 * v)) * 0.5;
-            let w = (Math.cos(v) * (1 + Math.sin(u))) * 0.3;
-            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
+            let v = (j / stepsV) * Math.PI * 2; // v od 0 do 2pi
+
+            let x, y, z, w;
+
+            // Klasyczna parametryzacja geometryczna Butelki Kleina
+            if (u < Math.PI / 2) {
+                x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(u) * Math.cos(v);
+                z = -8 * Math.sin(u) - 2 * (1 - Math.cos(u) / 2) * Math.sin(u) * Math.cos(v);
+            } else {
+                x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(v + Math.PI);
+                z = -8 * Math.sin(u);
+            }
+
+            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
+
+            // Wykorzystanie czwartego wymiaru (W), aby rozpleść samoprzecięcie w 4D
+            // Gdy u zbliża się do miejsca przecięcia, przesuwamy te punkty w osi W
+            w = Math.sin(2 * u) * Math.cos(v) * 1.5;
+
+            // Skalowanie obiektów, aby pasowały do kadru naszej kamery
+            const scaleFactor = 0.23;
+            // Przesunięcie w osi Z, aby wycentrować obiekt w pionie
+            verticesND.push({ 
+                x: x * scaleFactor, 
+                y: y * scaleFactor, 
+                z: (z + 4) * scaleFactor, 
+                w: w * scaleFactor, 
+                v: 0, u: 0, t: 0 
+            });
         }
     }
+
+    // Tworzenie siatki krawędzi łączących punkty w rurę
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            edges.push([current, i * stepsV + ((j + 1) % stepsV)]);
-            edges.push([current, ((i + 1) % stepsU) * stepsV + j]);
+            let nextV = i * stepsV + ((j + 1) % stepsV);
+            
+            // Łączenie w pierścienie
+            edges.push([current, nextV]);
+            
+            // Łączenie wzdłuż wysokości (bez zamykania skrajnych końców na stałe)
+            if (i < stepsU - 1) {
+                let nextU = (i + 1) * stepsV + j;
+                edges.push([current, nextU]);
+            }
         }
     }
     buildThreeObjects();
 }
+
 
 function loadSpherinder() {
     clearGeometry(0.025);
