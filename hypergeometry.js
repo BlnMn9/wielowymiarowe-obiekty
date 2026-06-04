@@ -1,3 +1,87 @@
+function projectND() {
+    const projectedVertices = [];
+    const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
+
+    verticesND.forEach(p => {
+        let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
+
+        // 1. Rotacje w wyższych wymiarach
+        if (currentObject === 7) {
+            let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
+            let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
+        }
+        if (currentObject === 6) {
+            let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
+            let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
+        }
+        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
+            let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
+            let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
+        }
+
+        // 2. Rotacje w przestrzeni 4D (płaszczyzny XW i YW)
+        let factorXW = 1.0;
+        let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
+
+        let cosXW = Math.cos(angleXW * factorXW), sinXW = Math.sin(angleXW * factorXW);
+        let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
+
+        let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
+        let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
+
+        // 3. Kaskadowe rzutowanie perspektywiczne (ND -> ... -> 5D -> 4D -> 3D)
+        const dist = 2.0;
+        if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
+        if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
+        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
+            const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
+        }
+
+        // Rzutowanie z 4D do 3D przy użyciu poprawni przeliczonego ramienia 'w'
+        const distance4D = isSpecial4D ? 2.4 : dist;
+        const f4D = 1 / (distance4D - w);
+
+        // Skalowanie końcowe dla ekranu 3D (Z POPRAWKĄ DLA OBIEKTU 13 NA TELEFONACH)
+        let scale = (currentObject === 1) ? 1.8 : 2.0;
+        if (currentObject === 2) scale = 1.3;
+        else if (currentObject === 5) scale = 1.7;
+        else if (currentObject === 7) scale = 3.0;
+        else if (currentObject === 6) scale = 2.6;
+        else if (currentObject === 11) scale = 2.4; 
+        else if (currentObject === 12) scale = 2.3; 
+        else if (currentObject === 9 || currentObject === 10) scale = 2.8;
+        else if (currentObject === 13) {
+            scale = window.innerWidth < 600 ? 1.7 : 2.4;
+        }
+
+        projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
+    });
+
+    for(let i = 0; i < spheres.length; i++) {
+        if(projectedVertices[i]) {
+            spheres[i].position.copy(projectedVertices[i]);
+            const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
+            let depthFactor = Math.max(0, Math.min(1, (worldPos.z + 1.4) / 2.8)); 
+            spheres[i].material.color.setRGB(0.15 + depthFactor * 0.85, 0.55 + depthFactor * 0.45, 0.75 + depthFactor * 0.25);
+        }
+    }
+
+    edges.forEach((edge, index) => {
+        const geo = lineGeometries[index];
+        if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
+            const posAttr = geo.attributes.position; const colAttr = geo.attributes.color;
+            const pA = projectedVertices[edge[0]]; const pB = projectedVertices[edge[1]];
+            posAttr.setXYZ(0, pA.x, pA.y, pA.z); posAttr.setXYZ(1, pB.x, pB.y, pB.z); posAttr.needsUpdate = true;
+            
+            const wA = pA.clone().applyEuler(edgeGroup.rotation); const wB = pB.clone().applyEuler(edgeGroup.rotation);
+            let depthA = Math.max(0, Math.min(1, (wA.z + 1.4) / 2.8)) * 0.5 + 0.5;
+            let depthB = Math.max(0, Math.min(1, (wB.z + 1.4) / 2.8)) * 0.5 + 0.5;
+            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85); colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
+            colAttr.needsUpdate = true;
+        }
+    });
+}
+
 // --- INICJALIZACJA SILNIKA I SCENY ---
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
@@ -86,7 +170,7 @@ function buildThreeObjects() {
     });
 }
 
-// --- GENERATORY GEOMETRII (1 - 7) ---
+// --- GENERATORY GEOMETRII (1 - 13) ---
 
 function loadTesseract() {
     clearGeometry(0.04);
@@ -116,10 +200,10 @@ function loadPentachor() {
     clearGeometry(0.05);
     const r = 0.9; 
     verticesND = [
-        { x: 1*r,  y: 1*r,  z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: 1*r,  y: -1*r, z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -1*r, y: 1*r,  z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -1*r, y: -1*r, z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: r*1,  y: r*1,  z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: r*1,  y: -r*1, z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: -r*1, y: r*1,  z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: -r*1, y: -r*1, z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
         { x: 0,    y: 0,    z: 0,    w: 1.8*r,   v: 0, u: 0, t: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
@@ -305,7 +389,6 @@ function loadKleinBottle() {
             y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
             w = Math.sin(2 * u) * Math.cos(v) * 1.5;
 
-            // ZWIĘKSZONO: scaleFactor z 0.12 na 0.18, żeby butelka była wyraźna na komputerze
             const scaleFactor = 0.18; 
             
             verticesND.push({ 
@@ -330,9 +413,6 @@ function loadKleinBottle() {
     }
     buildThreeObjects();
 }
-
-
-
 
 function loadSpherinder() {
     clearGeometry(0.025);
@@ -408,9 +488,8 @@ function load5DHypercube() {
     buildThreeObjects();
 }
 
-
 function loadDuocylinder() {
-    clearGeometry(0.022);
+    clearGeometry(0.028); 
     const stepsU = 20; 
     const stepsV = 20; 
     const r1 = 0.8;    
@@ -430,106 +509,18 @@ function loadDuocylinder() {
         }
     }
 
-    // KOMPLETNE TWORZENIE KRAWĘDZI DLA OBU OKRĘGÓW:
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
             
-            // Połączenie wzdłuż pierwszego okręgu (U) - domknięcie pierścienia głównego
             let nextU = ((i + 1) % stepsU) * stepsV + j;
             edges.push([current, nextU]);
             
-            // Połączenie wzdłuż drugiego okręgu (V) - domknięcie pierścienia pobocznego
             let nextV = i * stepsV + ((j + 1) % stepsV);
             edges.push([current, nextV]);
         }
     }
     buildThreeObjects();
-}
-
-
-
-
-// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
-function projectND() {
-    const projectedVertices = [];
-    const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10);
-
-    verticesND.forEach(p => {
-        let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
-
-        // 1. Rotacje w wyższych wymiarach
-        if (currentObject === 7) {
-            let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
-            let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
-        }
-        if (currentObject === 6) {
-            let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
-            let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
-        }
-        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
-            let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
-        }
-
-        // 2. Rotacje w przestrzeni 4D (płaszczyzny XW i YW)
-        let factorXW = 1.0;
-        let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
-
-        let cosXW = Math.cos(angleXW * factorXW), sinXW = Math.sin(angleXW * factorXW);
-        let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
-
-        let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
-        let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
-
-        // 3. Kaskadowe rzutowanie perspektywiczne (ND -> ... -> 5D -> 4D -> 3D)
-        const dist = 2.0;
-        if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
-        if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
-        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
-            const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
-        }
-
-        // Rzutowanie z 4D do 3D przy użyciu poprawnie przeliczonego ramienia 'w'
-        const distance4D = isSpecial4D ? 2.4 : dist;
-        const f4D = 1 / (distance4D - w);
-
-        // Skalowanie końcowe dla ekranu 3D
-        let scale = (currentObject === 1) ? 1.8 : 2.0;
-        if (currentObject === 2) scale = 1.3;
-        else if (currentObject === 5) scale = 1.7;
-        else if (currentObject === 7) scale = 3.0;
-        else if (currentObject === 6) scale = 2.6;
-        else if (currentObject === 11) scale = 2.4; 
-        else if (currentObject === 12) scale = 2.3; 
-        else if (currentObject >= 9) scale = 2.8;
-
-        projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
-    });
-
-    for(let i = 0; i < spheres.length; i++) {
-        if(projectedVertices[i]) {
-            spheres[i].position.copy(projectedVertices[i]);
-            const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
-            let depthFactor = Math.max(0, Math.min(1, (worldPos.z + 1.4) / 2.8)); 
-            spheres[i].material.color.setRGB(0.15 + depthFactor * 0.85, 0.55 + depthFactor * 0.45, 0.75 + depthFactor * 0.25);
-        }
-    }
-
-    edges.forEach((edge, index) => {
-        const geo = lineGeometries[index];
-        if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
-            const posAttr = geo.attributes.position; const colAttr = geo.attributes.color;
-            const pA = projectedVertices[edge[0]]; const pB = projectedVertices[edge[1]];
-            posAttr.setXYZ(0, pA.x, pA.y, pA.z); posAttr.setXYZ(1, pB.x, pB.y, pB.z); posAttr.needsUpdate = true;
-            
-            const wA = pA.clone().applyEuler(edgeGroup.rotation); const wB = pB.clone().applyEuler(edgeGroup.rotation);
-            let depthA = Math.max(0, Math.min(1, (wA.z + 1.4) / 2.8)) * 0.5 + 0.5;
-            let depthB = Math.max(0, Math.min(1, (wB.z + 1.4) / 2.8)) * 0.5 + 0.5;
-            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85); colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
-            colAttr.needsUpdate = true;
-        }
-    });
 }
 
 // --- GLOBALNA PĘTLA ANIMACJI ---
@@ -547,10 +538,10 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    // Zmieniamy z 12 na 13, aby pozwolić na załadowanie nowego obiektu
-    if (currentObject > 13) currentObject = 1; 
+    if (currentObject > 13) currentObject = 1;
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -565,12 +556,10 @@ function switchObject() {
         case 10: loadSpherinder(); break;
         case 11: load5DCrossPolytope(); break; 
         case 12: load5DHypercube(); break;     
-        case 13: loadDuocylinder(); break; // Sprawdź czy ten case jest dokładnie tak rozpisany
+        case 13: loadDuocylinder(); break; 
     }
     return currentObject;
 }
-
-
 
 // Start aplikacji
 loadTesseract();
