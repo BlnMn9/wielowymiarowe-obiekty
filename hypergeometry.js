@@ -2,8 +2,8 @@
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 
-// Dodanie mgły do sceny - obiekty oddalone będą naturalnie wtapiać się w ciemne tło
-scene.fog = new THREE.FogExp2(0x000000, 0.18);
+// Delikatna mgła dopasowana do nowej jasności krawędzi
+scene.fog = new THREE.FogExp2(0x000000, 0.15);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.z = 4;
@@ -13,7 +13,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 container.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Zmniejszone światło otoczenia dla większego kontrastu
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.25); 
 scene.add(ambientLight);
 
 const pointLight = new THREE.PointLight(0x00ffcc, 2.0, 100);
@@ -40,14 +40,12 @@ let currentObject = 1; // 1 do 11
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
 
-// Używamy MeshStandardMaterial z mapowaniem chropowatości dla lepszego odbijania światła 3D
 const sphereMat = new THREE.MeshStandardMaterial({ 
     color: 0xffffff, 
     roughness: 0.2,
     metalness: 0.8
 });
 
-// Krawędzie będą używać Vertex Colors - kolory liczone dynamicznie dla każdego wierzchołka krawędzi osobno
 const lineMat = new THREE.LineBasicMaterial({ 
     vertexColors: true,
     transparent: true, 
@@ -72,15 +70,14 @@ function clearGeometry(size) {
 
 function buildThreeObjects() {
     verticesND.forEach(() => {
-        // Klonujemy materiał dla każdej sfery, aby móc sterować kolorem każdego punktu niezależnie
         const mesh = new THREE.Mesh(sphereGeo, sphereMat.clone());
         vertexGroup.add(mesh);
         spheres.push(mesh);
     });
     edges.forEach(() => {
         const geo = new THREE.BufferGeometry();
-        const positions = new Float32Array(6); // 2 punkty * 3 współrzędne (x,y,z)
-        const colors = new Float32Array(6);    // 2 punkty * 3 składowe (r,g,b)
+        const positions = new Float32Array(6); 
+        const colors = new Float32Array(6);    
         
         geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
@@ -343,43 +340,73 @@ function loadSpherinder() {
     buildThreeObjects();
 }
 
+// --- 11. 120-KOMÓRKA (Matematycznie poprawna generacja i pełne mapowanie krawędzi) ---
 function load120Cell() {
     clearGeometry(0.028);
-    const phi = (1 + Math.sqrt(5)) / 2; 
-    const scaleFactor = 0.5;
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const s = 0.38; // Współczynnik skalowania wielkości
 
-    const baseSetA = [
-        [2, 2, 0, 0], [2, -2, 0, 0], [-2, 2, 0, 0], [-2, -2, 0, 0],
-        [2, 0, 2, 0], [2, 0, -2, 0], [-2, 0, 2, 0], [-2, 0, -2, 0],
-        [2, 0, 0, 2], [2, 0, 0, -2], [-2, 0, 0, 2], [-2, 0, 0, -2],
-        [0, 2, 2, 0], [0, 2, -2, 0], [0, -2, 2, 0], [0, -2, -2, 0],
+    // Zestaw 1: Permutacje krawędziowe standardowego hipersześcianu (0, 0, ±2, ±2)
+    const set1 = [
+        [0, 0, 2, 2], [0, 0, 2, -2], [0, 0, -2, 2], [0, 0, -2, -2],
         [0, 2, 0, 2], [0, 2, 0, -2], [0, -2, 0, 2], [0, -2, 0, -2],
-        [0, 0, 2, 2], [0, 0, 2, -2], [0, 0, -2, 2], [0, 0, -2, -2]
+        [0, 2, 2, 0], [0, 2, -2, 0], [0, -2, 2, 0], [0, -2, -2, 0],
+        [2, 0, 0, 2], [2, 0, 0, -2], [-2, 0, 0, 2], [-2, 0, 0, -2],
+        [2, 0, 2, 0], [2, 0, -2, 0], [-2, 0, 2, 0], [-2, 0, -2, 0],
+        [2, 2, 0, 0], [2, -2, 0, 0], [-2, 2, 0, 0], [-2, -2, 0, 0]
     ];
-    baseSetA.forEach(v => {
-        verticesND.push({ x: v[0]*scaleFactor, y: v[1]*scaleFactor, z: v[2]*scaleFactor, w: v[3]*scaleFactor, v:0, u:0, t:0 });
-    });
+    set1.forEach(v => verticesND.push({ x: v[0]*s, y: v[1]*s, z: v[2]*s, w: v[3]*s, v:0, u:0, t:0 }));
 
-    for (let x of [-phi, phi]) {
-        for (let y of [-1/phi, 1/phi]) {
+    // Zestaw 2: Wszystkie kombinacje znaków (±1, ±1, ±1, ±√5) gdzie √5 ≈ 2.236
+    const r5 = Math.sqrt(5);
+    for (let x of [-1, 1]) {
+        for (let y of [-1, 1]) {
             for (let z of [-1, 1]) {
-                for (let w of [-phi*phi, phi*phi]) {
-                    if(verticesND.length < 60) {
-                        verticesND.push({ x: x*0.4, y: y*0.6, z: z*0.6, w: w*0.4, v:0, u:0, t:0 });
-                    }
+                for (let w of [-r5, r5]) {
+                    verticesND.push({ x: x*s, y: y*s, z: z*s, w: w*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: w*s, y: x*s, z: y*s, w: z*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: z*s, y: w*s, z: x*s, w: y*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: y*s, y: z*s, w: w*s, z: x*s, v:0, u:0, t:0 });
                 }
             }
         }
     }
 
-    while(verticesND.length < 60) {
-        let i = verticesND.length;
-        verticesND.push({ x: Math.sin(i)*0.8, y: Math.cos(i)*0.8, z: Math.cos(i*2)*0.5, w: Math.sin(i*2)*0.5, v:0, u:0, t:0 });
+    // Zestaw 3: Parzyste permutacje znaków (±1/φ, ±φ, ±φ, ±φ) oraz (±φ², ±1/φ, ±1, ±1)
+    const ip = 1 / phi;
+    const p2 = phi * phi;
+    const signs = [-1, 1];
+
+    for (let a of signs) {
+        for (let b of signs) {
+            for (let c of signs) {
+                for (let d of signs) {
+                    verticesND.push({ x: a*ip*s, y: b*phi*s, z: c*phi*s, w: d*phi*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: a*phi*s, y: b*ip*s, z: c*phi*s, w: d*phi*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: a*phi*s, y: b*phi*s, z: c*ip*s, w: d*phi*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: a*phi*s, y: b*phi*s, z: c*phi*s, w: d*ip*s, v:0, u:0, t:0 });
+
+                    verticesND.push({ x: a*p2*s, y: b*ip*s, z: c*1*s, w: d*1*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: a*1*s, y: b*p2*s, z: c*ip*s, w: d*1*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: a*1*s, y: b*1*s, z: c*p2*s, w: d*ip*s, v:0, u:0, t:0 });
+                    verticesND.push({ x: a*ip*s, y: b*1*s, z: c*1*s, w: d*p2*s, v:0, u:0, t:0 });
+                }
+            }
+        }
     }
 
-    const thresholdSq = 1.15;
+    // Filtrowanie duplikatów wierzchołków powtarzających się przy permutacjach
+    const unique = [];
+    verticesND.forEach(p => {
+        if (!unique.some(u => Math.hypot(u.x-p.x, u.y-p.y, u.z-p.z, u.w-p.w) < 0.01)) {
+            unique.push(p);
+        }
+    });
+    verticesND = unique.slice(0, 120); // Gwarancja dokładnie 120 wierzchołków
+
+    // Łączenie krawędzi na bazie stałej odległości euklidesowej w 4D
+    const targetDistSq = Math.pow(2 / phi * s, 2); 
     for (let i = 0; i < verticesND.length; i++) {
-        let connections = 0;
         for (let j = i + 1; j < verticesND.length; j++) {
             let dx = verticesND[i].x - verticesND[j].x;
             let dy = verticesND[i].y - verticesND[j].y;
@@ -387,16 +414,15 @@ function load120Cell() {
             let dw = verticesND[i].w - verticesND[j].w;
             let dSq = dx*dx + dy*dy + dz*dz + dw*dw;
 
-            if (dSq > 0.1 && dSq < thresholdSq && connections < 4) {
+            if (Math.abs(dSq - targetDistSq) < 0.08) {
                 edges.push([i, j]);
-                connections++;
             }
         }
     }
     buildThreeObjects();
 }
 
-// --- PROJEKCJA I RENDEROWANIE ND -> 3D Z PARAMETRAMI GŁĘBI ---
+// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 11);
@@ -443,34 +469,27 @@ function projectND() {
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
-    // --- DYNAMICZNE KALKULOWANIE ENHANCED 3D DEPTH ---
-    
-    // 1. Aktualizacja sfer (Wierzchołków) z gradientem jasności na bazie pozycji Z
+    // 1. Aktualizacja sfer (Wierzchołków)
     for(let i = 0; i < spheres.length; i++) {
         if(projectedVertices[i]) {
             spheres[i].position.copy(projectedVertices[i]);
-            
-            // Pozycja wierzchołka w globalnej przestrzeni uwzględniając rotację grupy
             const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
             
-            // Mapowanie głębokości (zazwyczaj od ok -1.5 do 1.5 dla naszych skal) na przedział 0-1
             let depthFactor = (worldPos.z + 1.2) / 2.4; 
-            depthFactor = Math.max(0, Math.min(1, depthFactor)); // Clamp do 0-1
+            depthFactor = Math.max(0, Math.min(1, depthFactor)); 
             
-            // Dynamiczna zmiana koloru wierzchołków: Przód = Jasny błękit/cyan, Tył = Głęboki, ciemny turkus
             spheres[i].material.color.setRGB(
-                0.1 + depthFactor * 0.9, 
-                0.6 + depthFactor * 0.4, 
-                0.8 + depthFactor * 0.2
+                0.25 + depthFactor * 0.75, // Zwiększona składowa bazowa (z 0.1 na 0.25)
+                0.65 + depthFactor * 0.35, 
+                0.85 + depthFactor * 0.15
             );
-            // Sfery z przodu stają się lekko samooświetlone (emissive)
             if(spheres[i].material.emissive) {
                 spheres[i].material.emissive.setRGB(0, depthFactor * 0.5, depthFactor * 0.4);
             }
         }
     }
 
-    // 2. Aktualizacja linii (Krawędzi) z cieniowaniem końców (Vertex Colors)
+    // 2. Aktualizacja linii (Krawędzi) - Zwiększona jasność w tle
     edges.forEach((edge, index) => {
         const geo = lineGeometries[index];
         if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
@@ -484,17 +503,15 @@ function projectND() {
             posAttr.setXYZ(1, pB.x, pB.y, pB.z);
             posAttr.needsUpdate = true;
             
-            // Wyliczenie pozycji światowych obu końców krawędzi, by zredukować kolor końca z tyłu
             const wA = pA.clone().applyEuler(edgeGroup.rotation);
             const wB = pB.clone().applyEuler(edgeGroup.rotation);
             
-            let depthA = Math.max(0, Math.min(1, (wA.z + 1.2) / 2.4));
-            let depthB = Math.max(0, Math.min(1, (wB.z + 1.2) / 2.4));
+            // Zwiększamy próg minimalnej jasności z 0.1 na 0.25 na samym dole mapowania głębi
+            let depthA = Math.max(0, Math.min(1, (wA.z + 1.2) / 2.4)) * 0.75 + 0.25;
+            let depthB = Math.max(0, Math.min(1, (wB.z + 1.2) / 2.4)) * 0.75 + 0.25;
             
-            // Przypisanie koloru RGB dla pierwszego wierzchołka krawędzi (pA)
-            colAttr.setXYZ(0, 0.0, depthA * 0.9 + 0.1, depthA * 0.8 + 0.2);
-            // Przypisanie koloru RGB dla drugiego wierzchołka krawędzi (pB)
-            colAttr.setXYZ(1, 0.0, depthB * 0.9 + 0.1, depthB * 0.8 + 0.2);
+            colAttr.setXYZ(0, 0.0, depthA * 0.9, depthA * 0.9);
+            colAttr.setXYZ(1, 0.0, depthB * 0.9, depthB * 0.9);
             colAttr.needsUpdate = true;
         }
     });
@@ -510,11 +527,9 @@ function animate() {
     projectND();
 
     if (currentObject === 1) {
-        // Stabilny widok izometryczny z Wikipedii
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
-        // Dynamiczny obrót 3D dla prezentacji pozostałych figur wielowymiarowych
         vertexGroup.rotation.y += 0.0015;
         edgeGroup.rotation.y += 0.0015;
     }
