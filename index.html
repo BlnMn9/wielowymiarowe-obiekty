@@ -100,19 +100,19 @@
         const nextBtn = document.getElementById('next-btn');
 
         nextBtn.addEventListener('click', () => {
-            // Funkcja switchObject jest zdefiniowana globalnie w hypergeometry.js
-            const nextID = switchObject(); 
+    const nextID = switchObject(); 
 
-            // Aktualizacja tekstów w UI
-            titleEl.innerText = objectsUI[nextID].title;
-            descEl.innerText = objectsUI[nextID].desc;
+    titleEl.innerText = objectsUI[nextID].title;
+    descEl.innerText = objectsUI[nextID].desc;
 
-            if (nextID === 12) {
-                nextBtn.innerText = "Zobacz Teserakt";
-            } else {
-                nextBtn.innerText = "Następny obiekt";
-            }
-        });
+    // Zmienione z 11 na 12, ponieważ mamy teraz 12 obiektów!
+    if (nextID === 12) {
+        nextBtn.innerText = "Zobacz Teserakt";
+    } else {
+        nextBtn.innerText = "Następny obiekt";
+    }
+});
+
     </script>
 </body>
 </html>
