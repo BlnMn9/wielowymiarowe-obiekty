@@ -75,21 +75,20 @@
     <div id="canvas-container"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
     <script src="hypergeometry.js"></script>
 
     <script>
-        // Tablica z opisami obiektów dla UI (Zaktualizowana do 12 unikalnych obiektów)
+        // Tablica z opisami obiektów dla UI (Rozszerzona do 13 pozycji i naprawiona składniowo)
         const objectsUI = {
             1: { title: "1. Teserakt (Hiperkostka 4D)", desc: "Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D. Posiada 16 wierzchołków i 32 krawędzie." },
             2: { title: "2. Pentachor (5-Komórka)", desc: "Matematycznie wycentrowana 4-wymiarowa odmiana czworościanu. Posiada 5 wierzchołków połączonych w idealną, harmonijną sieć 10 krawędzi, która płynnie rotuje w kadrze." },
             3: { title: "3. 24-Komórka (Ikositetrachor)", desc: "Wyjątkowa wielokomórka regularna, która istnieje WYŁĄCZNIE w 4 wymiarach! Posiada 24 wierzchołki i 96 krawędzi, tworząc niesamowitą strukturę krystaliczną." },
-            4: { title: "4. 16-Komórka (Heksadekachor)", desc: "Czterowymiarowy odpowiednik ośmiościanu foremnego. Posiada tylko 8 wierzchołków i 24 krawędzie. Dzięki przestrzennej przejrzystości, bez problemu zaobserwujesz tutaj ruch każdej pojedynczej linii." },
+            4: { title: "4. 16-Komórka (Heksadekachor)", desc: "Czterowymiarowy odpowiednik ośmiościanu foremnego. Posiada tylko 8 wierzchołków i 24 krawędzi. Dzięki przestrzennej przejrzystości, bez problemu zaobserwujesz tutaj ruch każdej pojedynczej linii." },
             5: { title: "5. 5-Sympleks (Pentachoron 5D)", desc: "Najprostszy możliwy wielotop regularny w 5 wymiarach (odpowiednik trójkąta w 2D). Składa się z 6 wierzchołków, z których absolutnie każdy połączony jest z każdym innym, tworząc sieć 15 krawędzi." },
             6: { title: "6. Hekterakt (Hipersześcian 6D)", desc: "Ekstremalna geometria sześciu wymiarów! Hipersześcian 6D posiada 64 wierzchołki oraz 192 krawędzie. Wizualizacja powstaje za pomocą potrójnego rzutowania perspektywicznego." },
             7: { title: "7. Hepterakt (Hipersześcian 7D)", desc: "Imponująca struktura w przestrzeni siedmiowymiarowej. Zawiera aż 128 wierzchołków i 448 łączących je linii. Trójwymiarowy obraz powstaje na drodze poczwórnego rzutu perspektywicznego." },
             8: { title: "8. Hiperpiramida Dodekaedryczna (Stożek 4D)", desc: "Obiekt hybrydowy. Podstawą jest trójwymiarowy dwunastościan foremny (20 wierzchołków) umieszczony w przestrzeni 3D, natomiast pojedynczy wierzchołek (czubek piramidy) wysunięty jest w czwarty wymiar. Posiada 21 wierzchołków i 50 krawędzi." },
-            9: { title: "9. Butelka Kleina w 4D", desc: "Słynna jednostronna powierzchnia topologiczna. W trójwymiarze musi przecinać samą siebie, jednak rzutowana z przestrzeni 4D gładko przechodzi 'nad' swoją strukturą dzięki osi W. Wizualizacja składa się ze 120 punktów ułożonych w rurę." },
+            9: { title: "9. Butelka Kleina w 4D", desc: "Klasyczny, trójwymiarowy cień (rzut perspektywiczny) legendarnego obiektu topologicznego o jednostronnej powierzchni. Szyjka naczynia przechodzi gładko przez ściankę bez fizycznego przecinania jej – ułatwia to przesunięcie punktów w osi W czwartego wymiaru." },
             10: { title: "10. Hipercylinder (Hiperenatka 4D)", desc: "Czterowymiarowa figura walcowata (Spherinder). Powstaje z rozciągnięcia trójwymiarowej sfery wzdłuż czwartego wymiaru (osi W). Składa się ze 120 wierzchołków połączonych w podłużną strukturę klatkową o 240 krawędziach." },
             11: { title: "11. Ortopleks 5D (Cross-Polytope)", desc: "Pięciowymiarowy odpowiednik ośmiościanu foremnego. Posiada 10 wierzchołków i 40 krawędzi. Jego geometryczna struktura tworzy hipnotyzujący wzór podczas rotacji w głębokich wymiarach przestrzeni 5D." },
             12: { title: "12. Penterakt (Hipersześcian 5D)", desc: "Kostka w przestrzeni pięciowymiarowej wygenerowana wektorowo! Składa się z 32 wierzchołków i 80 krawędzi. To co widzisz, to podwójny rzut perspektywiczny (z 5D do 4D, a następnie do przestrzeni 3D) ujawniający hipnotyzujące przeplatanie linii." },
@@ -101,19 +100,20 @@
         const nextBtn = document.getElementById('next-btn');
 
         nextBtn.addEventListener('click', () => {
-    const nextID = switchObject(); 
+            // Wywołanie funkcji z pliku hypergeometry.js
+            const nextID = switchObject(); 
 
-    titleEl.innerText = objectsUI[nextID].title;
-    descEl.innerText = objectsUI[nextID].desc;
+            // Aktualizacja tekstów na stronie na podstawie wybranego ID obiektu
+            titleEl.innerText = objectsUI[nextID].title;
+            descEl.innerText = objectsUI[nextID].desc;
 
+            // Zmiana napisu na przycisku przed dojściem do końca pętli
             if (nextID === 13) {
                 nextBtn.innerText = "Zobacz Teserakt";
             } else {
                 nextBtn.innerText = "Następny obiekt";
             }
-
-});
-
+        });
     </script>
 </body>
 </html>
