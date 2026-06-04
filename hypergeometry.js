@@ -374,7 +374,11 @@ function load120Cell() {
     buildThreeObjects();
 }
 
-// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
+// ============================================================================
+// PODMIEŃ PONIŻSZE FUNKCJE W PLIKU hypergeometry.js
+// ============================================================================
+
+// --- ZMODYFIKOWANA PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 11);
@@ -398,11 +402,15 @@ function projectND() {
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
         }
 
-        // 4. Uniwersalne rotacje w płaszczyznach 4D
-        let cosXW = Math.cos(angleXW), sinXW = Math.sin(angleXW);
+        // 4. Rotacje w płaszczyznach 4D
+        // DLA TESERAKTU (currentObject === 1) mocno zwalniamy rotację 4D, 
+        // aby struktura "kostki w kostce" była czytelna i stabilna jak na animacji z Wikipedii
+        let factor4D = (currentObject === 1) ? 0.15 : 1.0; 
+        
+        let cosXW = Math.cos(angleXW * factor4D), sinXW = Math.sin(angleXW * factor4D);
         let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
 
-        let cosYW = Math.cos(angleYW), sinYW = Math.sin(angleYW);
+        let cosYW = Math.cos(angleYW * factor4D), sinYW = Math.sin(angleYW * factor4D);
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
         // 5. Wielopoziomowe rzutowanie perspektywiczne do 3D
@@ -412,11 +420,13 @@ function projectND() {
         if (currentObject === 5) { const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; }
         
         // Rzut ostateczny z 4D
-        const distance4D = isSpecial4D ? 2.3 : dist;
+        // Zwiększamy nieco dystans rzutu dla Teseraktu (do 2.5), co niweluje przerysowane zniekształcenia perspektywy
+        const distance4D = (currentObject === 1) ? 2.5 : (isSpecial4D ? 2.3 : dist);
         const f4D = 1 / (distance4D - w);
         
         let scale = 2.0;
-        if (currentObject === 2) scale = 1.3;
+        if (currentObject === 1) scale = 2.4; // Delikatne zwiększenie skali po odsunięciu rzutu
+        else if (currentObject === 2) scale = 1.3;
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
         else if (currentObject >= 9) scale = 2.8;
@@ -439,41 +449,38 @@ function projectND() {
     });
 }
 
-// --- PĘTLA GLOBALNA ANIMACJI ---
+// --- ZMODYFIKOWANA PĘTLA GLOBALNA ANIMACJI ---
 function animate() {
     requestAnimationFrame(animate);
 
     const speed = 0.008;
-    angleXW += speed; angleYW += speed * 0.6; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
+    angleXW += speed; 
+    angleYW += speed * 0.6; 
+    angleXV += speed * 0.4; 
+    angleZU += speed * 0.3; 
+    angleXT += speed * 0.2; 
 
     projectND();
 
-    vertexGroup.rotation.y += 0.0015;
-    edgeGroup.rotation.y += 0.0015;
+    // DLA TESERAKTU nadajemy wyraźny, stały obrót w przestrzeni 3D wokół osi Y oraz X.
+    // Dzięki temu trójwymiarowa "klatka" obraca się naturalnie dla ludzkiego oka, 
+    // eksponując wewnętrzny sześcian połączony z zewnętrznym.
+    if (currentObject === 1) {
+        vertexGroup.rotation.y += 0.012;
+        vertexGroup.rotation.x += 0.006;
+        edgeGroup.rotation.y += 0.012;
+        edgeGroup.rotation.x += 0.006;
+    } else {
+        // Standardowy, bardzo delikatny ruch dla pozostałych obiektów ND
+        vertexGroup.rotation.y += 0.0015;
+        vertexGroup.rotation.x = 0.5; // Przywrócenie domyślnego pochylenia
+        edgeGroup.rotation.y += 0.0015;
+        edgeGroup.rotation.x = 0.5;
+    }
 
     renderer.render(scene, camera);
 }
 
-// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW (WYWOŁYWANA Z HTML) ---
-function switchObject() {
-    currentObject++;
-    if (currentObject > 11) currentObject = 1;
-
-    switch(currentObject) {
-        case 1: loadTesseract(); break;
-        case 2: loadPentachor(); break;
-        case 3: load24Cell(); break;
-        case 4: load16Cell(); break;
-        case 5: loadPenterakt(); break;
-        case 6: loadHekterakt(); break;
-        case 7: loadHepterakt(); break;
-        case 8: loadHyperPyramid(); break;
-        case 9: loadKleinBottle(); break;
-        case 10: loadSpherinder(); break;
-        case 11: load120Cell(); break;
-    }
-    return currentObject;
-}
 
 // Start aplikacji
 loadTesseract();
