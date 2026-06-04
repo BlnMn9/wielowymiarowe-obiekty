@@ -21,6 +21,7 @@ let edgeGroup = new THREE.Group();
 scene.add(vertexGroup);
 scene.add(edgeGroup);
 
+// Początkowe pochylenie widoku dla lepszej perspektywy 3D
 vertexGroup.rotation.x = 0.5; vertexGroup.rotation.y = 0.5;
 edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
 
@@ -43,6 +44,10 @@ function clearGeometry(size) {
     while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 6, 6);
+    
+    // Reset rotacji 3D przy zmianie obiektu na domyślne wartości geometryczne
+    vertexGroup.rotation.x = 0.5; vertexGroup.rotation.y = 0.5;
+    edgeGroup.rotation.x = 0.5; edgeGroup.rotation.y = 0.5;
 }
 
 function buildThreeObjects() {
@@ -313,14 +318,11 @@ function loadSpherinder() {
     buildThreeObjects();
 }
 
-// --- 11. NOWOŚĆ: 120-KOMÓRKA (HEKATONICHOR - REPREZENTACJA STRUKTURALNA RDZENIA) ---
 function load120Cell() {
     clearGeometry(0.028);
-    const phi = (1 + Math.sqrt(5)) / 2; // Złota proporcja
+    const phi = (1 + Math.sqrt(5)) / 2; 
     const scaleFactor = 0.5;
 
-    // Generowanie zestawu 60 punktów z permutacji współrzędnych sferycznych w 4D
-    // Zestaw A: Permutacje typu (±2, ±2, 0, 0) przeskalowane
     const baseSetA = [
         [2, 2, 0, 0], [2, -2, 0, 0], [-2, 2, 0, 0], [-2, -2, 0, 0],
         [2, 0, 2, 0], [2, 0, -2, 0], [-2, 0, 2, 0], [-2, 0, -2, 0],
@@ -333,13 +335,10 @@ function load120Cell() {
         verticesND.push({ x: v[0]*scaleFactor, y: v[1]*scaleFactor, z: v[2]*scaleFactor, w: v[3]*scaleFactor, v:0, u:0, t:0 });
     });
 
-    // Zestaw B: Permutacje cykliczne oparte na złotej liczbie (±phi^2, ±1, ±1, ±1) i pokrewne
-    // Dla optymalizacji wizualnej tworzymy rdzeń o gęstym splocie geometrycznym
     for (let x of [-phi, phi]) {
         for (let y of [-1/phi, 1/phi]) {
             for (let z of [-1, 1]) {
                 for (let w of [-phi*phi, phi*phi]) {
-                    // Wybieramy zbalansowane układy, aby symetria była sferyczna wokół środka 4D
                     if(verticesND.length < 60) {
                         verticesND.push({ x: x*0.4, y: y*0.6, z: z*0.6, w: w*0.4, v:0, u:0, t:0 });
                     }
@@ -348,13 +347,11 @@ function load120Cell() {
         }
     }
 
-    // Dopełnienie do 60 stabilnych wierzchołków strukturalnych
     while(verticesND.length < 60) {
         let i = verticesND.length;
         verticesND.push({ x: Math.sin(i)*0.8, y: Math.cos(i)*0.8, z: Math.cos(i*2)*0.5, w: Math.sin(i*2)*0.5, v:0, u:0, t:0 });
     }
 
-    // Obliczanie krawędzi na podstawie najbliższych odległości między węzłami sieci
     const thresholdSq = 1.15;
     for (let i = 0; i < verticesND.length; i++) {
         let connections = 0;
@@ -374,11 +371,7 @@ function load120Cell() {
     buildThreeObjects();
 }
 
-// ============================================================================
-// PODMIEŃ PONIŻSZE FUNKCJE W PLIKU hypergeometry.js
-// ============================================================================
-
-// --- ZMODYFIKOWANA PROJEKCJA I RENDEROWANIE ND -> 3D ---
+// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 11);
@@ -403,10 +396,8 @@ function projectND() {
         }
 
         // 4. Rotacje w płaszczyznach 4D
-        // DLA TESERAKTU (currentObject === 1) mocno zwalniamy rotację 4D, 
-        // aby struktura "kostki w kostce" była czytelna i stabilna jak na animacji z Wikipedii
         let factor4D = (currentObject === 1) ? 0.15 : 1.0; 
-        
+
         let cosXW = Math.cos(angleXW * factor4D), sinXW = Math.sin(angleXW * factor4D);
         let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
 
@@ -418,23 +409,21 @@ function projectND() {
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; }
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; }
         if (currentObject === 5) { const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; }
-        
+
         // Rzut ostateczny z 4D
-        // Zwiększamy nieco dystans rzutu dla Teseraktu (do 2.5), co niweluje przerysowane zniekształcenia perspektywy
         const distance4D = (currentObject === 1) ? 2.5 : (isSpecial4D ? 2.3 : dist);
         const f4D = 1 / (distance4D - w);
-        
+
         let scale = 2.0;
-        if (currentObject === 1) scale = 2.4; // Delikatne zwiększenie skali po odsunięciu rzutu
+        if (currentObject === 1) scale = 2.4; 
         else if (currentObject === 2) scale = 1.3;
         else if (currentObject === 7) scale = 3.0;
         else if (currentObject === 6) scale = 2.6;
         else if (currentObject >= 9) scale = 2.8;
-        
+
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
-    // Podmiana pozycji w scenie 3D
     for(let i = 0; i < spheres.length; i++) {
         if(projectedVertices[i]) spheres[i].position.copy(projectedVertices[i]);
     }
@@ -449,38 +438,50 @@ function projectND() {
     });
 }
 
-// --- ZMODYFIKOWANA PĘTLA GLOBALNA ANIMACJI ---
+// --- GLOBALNA PĘTLA ANIMACJI ---
 function animate() {
     requestAnimationFrame(animate);
 
     const speed = 0.008;
-    angleXW += speed; 
-    angleYW += speed * 0.6; 
-    angleXV += speed * 0.4; 
-    angleZU += speed * 0.3; 
-    angleXT += speed * 0.2; 
+    angleXW += speed; angleYW += speed * 0.6; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
 
     projectND();
 
-    // DLA TESERAKTU nadajemy wyraźny, stały obrót w przestrzeni 3D wokół osi Y oraz X.
-    // Dzięki temu trójwymiarowa "klatka" obraca się naturalnie dla ludzkiego oka, 
-    // eksponując wewnętrzny sześcian połączony z zewnętrznym.
     if (currentObject === 1) {
+        // Dynamiczny i czytelny obrót 3D dla Teseraktu
         vertexGroup.rotation.y += 0.012;
         vertexGroup.rotation.x += 0.006;
         edgeGroup.rotation.y += 0.012;
         edgeGroup.rotation.x += 0.006;
     } else {
-        // Standardowy, bardzo delikatny ruch dla pozostałych obiektów ND
+        // Delikatny obrót wokół osi Y dla zachowania trójwymiarowości pozostałych figur
         vertexGroup.rotation.y += 0.0015;
-        vertexGroup.rotation.x = 0.5; // Przywrócenie domyślnego pochylenia
         edgeGroup.rotation.y += 0.0015;
-        edgeGroup.rotation.x = 0.5;
     }
 
     renderer.render(scene, camera);
 }
 
+// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW (WYWOŁYWANA Z HTML) ---
+function switchObject() {
+    currentObject++;
+    if (currentObject > 11) currentObject = 1;
+
+    switch(currentObject) {
+        case 1: loadTesseract(); break;
+        case 2: loadPentachor(); break;
+        case 3: load24Cell(); break;
+        case 4: load16Cell(); break;
+        case 5: loadPenterakt(); break;
+        case 6: loadHekterakt(); break;
+        case 7: loadHepterakt(); break;
+        case 8: loadHyperPyramid(); break;
+        case 9: loadKleinBottle(); break;
+        case 10: loadSpherinder(); break;
+        case 11: load120Cell(); break;
+    }
+    return currentObject;
+}
 
 // Start aplikacji
 loadTesseract();
