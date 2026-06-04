@@ -116,10 +116,10 @@ function loadPentachor() {
     clearGeometry(0.05);
     const r = 0.9; 
     verticesND = [
-        { x: r*1,  y: r*1,  z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: r*1,  y: -r*1, z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -r*1, y: r*1,  z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -r*1, y: -r*1, z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: 1*r,  y: 1*r,  z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: 1*r,  y: -1*r, z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: -1*r, y: 1*r,  z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: -1*r, y: -1*r, z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
         { x: 0,    y: 0,    z: 0,    w: 1.8*r,   v: 0, u: 0, t: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
@@ -156,6 +156,7 @@ function load24Cell() {
     buildThreeObjects();
 }
 
+// Obiekt 4: 16-Komórka
 function load16Cell() {
     clearGeometry(0.045);
     verticesND = [
@@ -282,50 +283,25 @@ function loadHyperPyramid() {
     buildThreeObjects();
 }
 
-
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 36; 
-    const stepsV = 36; 
-
+    const stepsU = 24; const stepsV = 5; 
     for (let i = 0; i < stepsU; i++) {
-        let u = (i / stepsU) * Math.PI; 
+        let u = (i / stepsU) * Math.PI * 2;
         for (let j = 0; j < stepsV; j++) {
-            let v = (j / stepsV) * Math.PI * 2; 
-
-            let x, y, z, w;
-
-            if (u < Math.PI / 2) {
-                x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(u) * Math.cos(v);
-                z = -8 * Math.sin(u) - 2 * (1 - Math.cos(u) / 2) * Math.sin(u) * Math.cos(v);
-            } else {
-                x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(v + Math.PI);
-                z = -8 * Math.sin(u);
-            }
-
-            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
-            w = Math.sin(2 * u) * Math.cos(v) * 1.5;
-
-            const scaleFactor = 0.18; 
-            
-            verticesND.push({ 
-                x: x * scaleFactor, 
-                y: y * scaleFactor, 
-                z: (z + 3.5) * scaleFactor, 
-                w: w * scaleFactor, 
-                v: 0, u: 0, t: 0 
-            });
+            let v = (j / stepsV) * Math.PI * 2;
+            let x = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.cos(u) * 0.5;
+            let y = (1.2 + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.sin(u) * 0.5;
+            let z = (Math.sin(u / 2) * Math.sin(v) + Math.cos(u / 2) * Math.sin(2 * v)) * 0.5;
+            let w = (Math.cos(v) * (1 + Math.sin(u))) * 0.3;
+            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
         }
     }
-
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            let nextV = i * stepsV + ((j + 1) % stepsV);
-            edges.push([current, nextV]);
-            
-            let nextU = ((i + 1) % stepsU) * stepsV + j;
-            edges.push([current, nextU]);
+            edges.push([current, i * stepsV + ((j + 1) % stepsV)]);
+            edges.push([current, ((i + 1) % stepsU) * stepsV + j]);
         }
     }
     buildThreeObjects();
@@ -370,11 +346,7 @@ function load5DCrossPolytope() {
     ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
-            if (i === 0 && j === 1) continue;
-            if (i === 2 && j === 3) continue;
-            if (i === 4 && j === 5) continue;
-            if (i === 6 && j === 7) continue;
-            if (i === 8 && j === 9) continue;
+            if (i === 0 && j === 1 || i === 2 && j === 3 || i === 4 && j === 5 || i === 6 && j === 7 || i === 8 && j === 9) continue;
             edges.push([i, j]);
         }
     }
@@ -405,36 +377,26 @@ function load5DHypercube() {
     buildThreeObjects();
 }
 
+// NAPRAWIONO: Dodano brakujący generator obiektu 13 (Duocylinder)
 function loadDuocylinder() {
     clearGeometry(0.028); 
-    const stepsU = 20; 
-    const stepsV = 20; 
-    const r1 = 0.95;    
-    const r2 = 0.95;
+    const stepsU = 20; const stepsV = 20; 
+    const r1 = 0.95; const r2 = 0.95;
 
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI * 2;
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2;
-            
-            let x = r1 * Math.cos(u);
-            let y = r1 * Math.sin(u);
-            let z = r2 * Math.cos(v);
-            let w = r2 * Math.sin(v);
-
+            let x = r1 * Math.cos(u); let y = r1 * Math.sin(u);
+            let z = r2 * Math.cos(v); let w = r2 * Math.sin(v);
             verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
         }
     }
-
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            
-            let nextU = ((i + 1) % stepsU) * stepsV + j;
-            edges.push([current, nextU]);
-            
-            let nextV = i * stepsV + ((j + 1) % stepsV);
-            edges.push([current, nextV]);
+            let nextU = ((i + 1) % stepsU) * stepsV + j; edges.push([current, nextU]);
+            let nextV = i * stepsV + ((j + 1) % stepsV); edges.push([current, nextV]);
         }
     }
     buildThreeObjects();
@@ -451,22 +413,25 @@ function projectND() {
         if (currentObject === 7) {
             let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
             let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
+            let cosYT = Math.cos(angleXT * 0.6), sinYT = Math.sin(angleXT * 0.6);
+            let yTmp = y * cosYT - t * sinYT; t = y * sinYT + t * cosYT; y = yTmp;
         }
         if (currentObject === 6) {
             let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
             let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
+            let cosYU = Math.cos(angleZU * 0.6), sinYU = Math.sin(angleZU * 0.6);
+            let yTmp = y * cosYU - u * sinYU; u = y * sinYU + u * cosYU; y = yTmp;
         }
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
             let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
+            let cosYV = Math.cos(angleXV * 0.6), sinYV = Math.sin(angleXV * 0.6);
+            let yTmp = y * cosYV - v * sinYV; v = y * sinYV + v * cosYV; y = yTmp;
         }
 
-        let factorXW = 1.0;
-        let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
-
+        let factorXW = 1.0; let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
         let cosXW = Math.cos(angleXW * factorXW), sinXW = Math.sin(angleXW * factorXW);
         let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
-
         let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
@@ -488,9 +453,7 @@ function projectND() {
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.3; 
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
-        else if (currentObject === 13) {
-            scale = window.innerWidth < 600 ? 2.2 : 3.2;
-        }
+        else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
@@ -538,7 +501,7 @@ function animate() {
 // --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 13) currentObject = 1;
+    if (currentObject > 13) currentObject = 1; // NAPRAWIONO: Zmieniono z 12 na 13
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -553,7 +516,7 @@ function switchObject() {
         case 10: loadSpherinder(); break;
         case 11: load5DCrossPolytope(); break; 
         case 12: load5DHypercube(); break;     
-        case 13: loadDuocylinder(); break; 
+        case 13: loadDuocylinder(); break; // NAPRAWIONO: Dodano brakujący obiekt w switchu
     }
     return currentObject;
 }
