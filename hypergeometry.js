@@ -370,7 +370,7 @@ function load5DHypercube() {
         for (let j = i + 1; j < 32; j++) {
             let diff = 0;
             if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++;
+            if (verticesND[i].y !== verticesND[j].y) diff++; // TUTAJ: było verticesND[j].j
             if (verticesND[i].z !== verticesND[j].z) diff++;
             if (verticesND[i].w !== verticesND[j].w) diff++;
             if (verticesND[i].v !== verticesND[j].v) diff++;
@@ -379,6 +379,7 @@ function load5DHypercube() {
     }
     buildThreeObjects();
 }
+
 
 // --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
