@@ -393,45 +393,45 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-// --- ZSYNCHRONIZOWANA PROJEKCJA I ROTACJA ND -> 3D ---
+// --- ZSYNCHRONIZOWANA PROJEKCJA I ROTACJA ND -> 3D (W PEŁNI NAPRAWIONA) ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
 
-    // Kąty główne zsynchronizowane z Tesseraktem (XW i YW)
-    let cosXW = Math.cos(angleXW), sinXW = Math.sin(angleXW);
-    let cosYW = Math.cos(angleYW * 0.6), sinYW = Math.sin(angleYW * 0.6);
+    // Identyczna prędkość i faza dla wszystkich osi, aby uzyskać czysty efekt Tesseraktu
+    let cos4D_1 = Math.cos(angleXW), sin4D_1 = Math.sin(angleXW);
+    let cos4D_2 = Math.cos(angleYW * 0.6), sin4D_2 = Math.sin(angleYW * 0.6);
 
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // NAPRAWIONO: Wyższe wymiary (5D, 6D, 7D) rotują teraz dokładnie tak samo jak 4D (Tesserakt)
-        // tzn. wykonują zsynchronizowane obroty w parach płaszczyzn (XV/YV, ZU/YU, XT/YT)
-        
-        // Rotacja 7D (XT oraz YT) - analogicznie do ruchów 4D
+        // NAPRAWIONO: Każdy wyższy wymiar rotuje teraz NIEZALEŻNIE w parach płaszczyzn 
+        // o dokładnie takie same parametry, co wymusza idealny ruch hipersześcienny typu "wywracanie"
+
+        // 1. Płynna rotacja 7D (Płaszczyzny XT oraz ZT)
         if (currentObject === 7) {
-            let xTmp = x * cosXW - t * sinXW; t = x * sinXW + t * cosXW; x = xTmp;
-            let yTmp = y * cosYW - t * sinYW; t = y * sinYW + t * cosYW; y = yTmp;
+            let xTmp = x * cos4D_1 - t * sin4D_1; t = x * sin4D_1 + t * cos4D_1; x = xTmp;
+            let zTmp = z * cos4D_2 - t * sin4D_2; t = z * sin4D_2 + t * cos4D_2; z = zTmp;
         }
-        // Rotacja 6D (ZU oraz YU) - analogicznie do ruchów 4D
-        if (currentObject === 6) {
-            let zTmp = z * cosXW - u * sinXW; u = z * sinXW + u * cosXW; z = zTmp;
-            let yTmp = y * cosYW - u * sinYW; u = y * sinYW + u * cosYW; y = yTmp;
+        // 2. Płynna rotacja 6D (Płaszczyzny XU oraz YU)
+        if (currentObject === 6 || currentObject === 7) {
+            let xTmp = x * cos4D_1 - u * sin4D_1; u = x * sin4D_1 + u * cos4D_1; x = xTmp;
+            let yTmp = y * cos4D_2 - u * sin4D_2; u = y * sin4D_2 + u * cos4D_2; y = yTmp;
         }
-        // Rotacja 5D (XV oraz YV) dla obiektów 5, 6, 7, 11 i 12 - analogicznie do ruchów 4D
+        // 3. Płynna rotacja 5D (Płaszczyzny XV oraz ZV)
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let xTmp = x * cosXW - v * sinXW; v = x * sinXW + v * cosXW; x = xTmp;
-            let yTmp = y * cosYW - v * sinYW; v = y * sinYW + v * cosYW; y = yTmp;
+            let xTmp = x * cos4D_1 - v * sin4D_1; v = x * sin4D_1 + v * cos4D_1; x = xTmp;
+            let zTmp = z * cos4D_2 - v * sin4D_2; v = z * sin4D_2 + v * cos4D_2; z = zTmp;
         }
 
-        // Standardowa rotacja płaszczyzn 4D (XW oraz YW)
-        let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
-        let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
+        // 4. Standardowa, kultowa rotacja 4D Tesseraktu (Płaszczyzny XW oraz YW)
+        let x1 = x * cos4D_1 - w * sin4D_1; w = x * sin4D_1 + w * cos4D_1; x = x1;
+        let y1 = y * cos4D_2 - w * sin4D_2; w = y * sin4D_2 + w * cos4D_2; y = y1;
 
-        // Kaskadowe rzutowanie perspektywiczne (w dół od 7D do 3D)
+        // Kaskadowe rzutowanie perspektywiczne zachowujące właściwą głębię
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
-        if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
+        if (currentObject === 6 || currentObject === 7) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
         }
