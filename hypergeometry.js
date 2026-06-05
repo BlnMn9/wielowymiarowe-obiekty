@@ -282,19 +282,14 @@ function loadHyperPyramid() {
     buildThreeObjects();
 }
 
-// NAPRAWIONO: Przywrócono piękną, gęstą strukturę 4D dla Butelki Kleina
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 36; 
-    const stepsV = 36; 
-
+    const stepsU = 36; const stepsV = 36; 
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI; 
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2; 
-
             let x, y, z, w;
-
             if (u < Math.PI / 2) {
                 x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(u) * Math.cos(v);
                 z = -8 * Math.sin(u) - 2 * (1 - Math.cos(u) / 2) * Math.sin(u) * Math.cos(v);
@@ -302,22 +297,11 @@ function loadKleinBottle() {
                 x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(v + Math.PI);
                 z = -8 * Math.sin(u);
             }
-
-            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
-            w = Math.sin(2 * u) * Math.cos(v) * 1.5;
-
+            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v); w = Math.sin(2 * u) * Math.cos(v) * 1.5;
             const scaleFactor = 0.18; 
-            
-            verticesND.push({ 
-                x: x * scaleFactor, 
-                y: y * scaleFactor, 
-                z: (z + 3.5) * scaleFactor, 
-                w: w * scaleFactor, 
-                v: 0, u: 0, t: 0 
-            });
+            verticesND.push({ x: x * scaleFactor, y: y * scaleFactor, z: (z + 3.5) * scaleFactor, w: w * scaleFactor, v: 0, u: 0, t: 0 });
         }
     }
-
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
@@ -390,15 +374,12 @@ function load5DHypercube() {
 
 function loadDuocylinder() {
     clearGeometry(0.028); 
-    const stepsU = 20; const stepsV = 20; 
-    const r1 = 0.95; const r2 = 0.95;
-
+    const stepsU = 20; const stepsV = 20; const r1 = 0.95; const r2 = 0.95;
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI * 2;
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2;
-            let x = r1 * Math.cos(u); let y = r1 * Math.sin(u);
-            let z = r2 * Math.cos(v); let w = r2 * Math.sin(v);
+            let x = r1 * Math.cos(u); let y = r1 * Math.sin(u); let z = r2 * Math.cos(v); let w = r2 * Math.sin(v);
             verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
         }
     }
@@ -412,38 +393,42 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
+// --- ZSYNCHRONIZOWANA PROJEKCJA I ROTACJA ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
 
+    // Kąty główne zsynchronizowane z Tesseraktem (XW i YW)
+    let cosXW = Math.cos(angleXW), sinXW = Math.sin(angleXW);
+    let cosYW = Math.cos(angleYW * 0.6), sinYW = Math.sin(angleYW * 0.6);
+
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
+        // NAPRAWIONO: Wyższe wymiary (5D, 6D, 7D) rotują teraz dokładnie tak samo jak 4D (Tesserakt)
+        // tzn. wykonują zsynchronizowane obroty w parach płaszczyzn (XV/YV, ZU/YU, XT/YT)
+        
+        // Rotacja 7D (XT oraz YT) - analogicznie do ruchów 4D
         if (currentObject === 7) {
-            let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
-            let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
-            let cosYT = Math.cos(angleXT * 0.6), sinYT = Math.sin(angleXT * 0.6);
-            let yTmp = y * cosYT - t * sinYT; t = y * sinYT + t * cosYT; y = yTmp;
+            let xTmp = x * cosXW - t * sinXW; t = x * sinXW + t * cosXW; x = xTmp;
+            let yTmp = y * cosYW - t * sinYW; t = y * sinYW + t * cosYW; y = yTmp;
         }
+        // Rotacja 6D (ZU oraz YU) - analogicznie do ruchów 4D
         if (currentObject === 6) {
-            let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
-            let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
-            let cosYU = Math.cos(angleZU * 0.6), sinYU = Math.sin(angleZU * 0.6);
-            let yTmp = y * cosYU - u * sinYU; u = y * sinYU + u * cosYU; y = yTmp;
+            let zTmp = z * cosXW - u * sinXW; u = z * sinXW + u * cosXW; z = zTmp;
+            let yTmp = y * cosYW - u * sinYW; u = y * sinYW + u * cosYW; y = yTmp;
         }
+        // Rotacja 5D (XV oraz YV) dla obiektów 5, 6, 7, 11 i 12 - analogicznie do ruchów 4D
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
-            let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
-            let cosYV = Math.cos(angleXV * 0.6), sinYV = Math.sin(angleXV * 0.6);
-            let yTmp = y * cosYV - v * sinYV; v = y * sinYV + v * cosYV; y = yTmp;
+            let xTmp = x * cosXW - v * sinXW; v = x * sinXW + v * cosXW; x = xTmp;
+            let yTmp = y * cosYW - v * sinYW; v = y * sinYW + v * cosYW; y = yTmp;
         }
 
-        let factorXW = 1.0; let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
-        let cosXW = Math.cos(angleXW * factorXW), sinXW = Math.sin(angleXW * factorXW);
+        // Standardowa rotacja płaszczyzn 4D (XW oraz YW)
         let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
-        let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
+        // Kaskadowe rzutowanie perspektywiczne (w dół od 7D do 3D)
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
@@ -495,7 +480,7 @@ function projectND() {
 function animate() {
     requestAnimationFrame(animate);
     const speed = 0.012; 
-    angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
+    angleXW += speed; angleYW += speed; 
     projectND();
 
     if (currentObject === 1) {
