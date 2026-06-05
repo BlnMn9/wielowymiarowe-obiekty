@@ -24,6 +24,7 @@ let edgeGroup = new THREE.Group();
 scene.add(vertexGroup);
 scene.add(edgeGroup);
 
+// Początkowe, kultowe ustawienie kąta widzenia
 vertexGroup.rotation.set(0.38, 0.62, 0);
 edgeGroup.rotation.set(0.38, 0.62, 0);
 
@@ -33,7 +34,7 @@ let edges = [];
 let spheres = [];
 let lineGeometries = [];
 
-let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0; 
+let angleXW = 0, angleYW = 0; 
 let currentObject = 1; 
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
@@ -57,7 +58,9 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    if (currentObject === 1) {
+    // Stabilizacja kąta kamery dla hipersześcianów i obiektów pokrewnych
+    const isHypercubeType = (currentObject === 1 || currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12);
+    if (isHypercubeType) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
@@ -393,42 +396,42 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-// --- ZSYNCHRONIZOWANA PROJEKCJA I ROTACJA ND -> 3D (W PEŁNI NAPRAWIONA) ---
+// --- SILNIK PROJEKCJI ND -> 3D (ZSYNCHRONIZOWANY RUCH HIPERSZEŚCIANU) ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
 
-    // Identyczna prędkość i faza dla wszystkich osi, aby uzyskać czysty efekt Tesseraktu
-    let cos4D_1 = Math.cos(angleXW), sin4D_1 = Math.sin(angleXW);
-    let cos4D_2 = Math.cos(angleYW * 0.6), sin4D_2 = Math.sin(angleYW * 0.6);
+    // Wyciągnięte stałe obrotu tesseraktu (XW, YW) dla zachowania identycznej prędkości i fazy
+    let cosXW = Math.cos(angleXW), sinXW = Math.sin(angleXW);
+    let cosYW = Math.cos(angleYW * 0.6), sinYW = Math.sin(angleYW * 0.6);
 
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // NAPRAWIONO: Każdy wyższy wymiar rotuje teraz NIEZALEŻNIE w parach płaszczyzn 
-        // o dokładnie takie same parametry, co wymusza idealny ruch hipersześcienny typu "wywracanie"
-
-        // 1. Płynna rotacja 7D (Płaszczyzny XT oraz ZT)
+        // NAPRAWIONO: Wyższe wymiary (V, U, T) wykonują teraz DOKŁADNIE takie same rotacje
+        // względem osi głównych, co wymusza identyczny, czysty efekt hipnotyzującego "wywracania" tesseraktu.
+        
+        // Rotacja dla wymiaru 7D (Hepterakt)
         if (currentObject === 7) {
-            let xTmp = x * cos4D_1 - t * sin4D_1; t = x * sin4D_1 + t * cos4D_1; x = xTmp;
-            let zTmp = z * cos4D_2 - t * sin4D_2; t = z * sin4D_2 + t * cos4D_2; z = zTmp;
+            let xTmp = x * cosXW - t * sinXW; t = x * sinXW + t * cosXW; x = xTmp;
+            let yTmp = y * cosYW - t * sinYW; t = y * sinYW + t * cosYW; y = yTmp;
         }
-        // 2. Płynna rotacja 6D (Płaszczyzny XU oraz YU)
+        // Rotacja dla wymiaru 6D (Hekterakt / Hepterakt)
         if (currentObject === 6 || currentObject === 7) {
-            let xTmp = x * cos4D_1 - u * sin4D_1; u = x * sin4D_1 + u * cos4D_1; x = xTmp;
-            let yTmp = y * cos4D_2 - u * sin4D_2; u = y * sin4D_2 + u * cos4D_2; y = yTmp;
+            let xTmp = x * cosXW - u * sinXW; u = x * sinXW + u * cosXW; x = xTmp;
+            let yTmp = y * cosYW - u * sinYW; u = y * sinYW + u * cosYW; y = yTmp;
         }
-        // 3. Płynna rotacja 5D (Płaszczyzny XV oraz ZV)
+        // Rotacja dla wymiaru 5D (Hekterakt / Hepterakt / 5D kostki)
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let xTmp = x * cos4D_1 - v * sin4D_1; v = x * sin4D_1 + v * cos4D_1; x = xTmp;
-            let zTmp = z * cos4D_2 - v * sin4D_2; v = z * sin4D_2 + v * cos4D_2; z = zTmp;
+            let xTmp = x * cosXW - v * sinXW; v = x * sinXW + v * cosXW; x = xTmp;
+            let yTmp = y * cosYW - v * sinYW; v = y * sinYW + v * cosYW; y = yTmp;
         }
 
-        // 4. Standardowa, kultowa rotacja 4D Tesseraktu (Płaszczyzny XW oraz YW)
-        let x1 = x * cos4D_1 - w * sin4D_1; w = x * sin4D_1 + w * cos4D_1; x = x1;
-        let y1 = y * cos4D_2 - w * sin4D_2; w = y * sin4D_2 + w * cos4D_2; y = y1;
+        // Klasyczna rotacja 4D (Tesserakt) na bazie której działają wyższe kostki
+        let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
+        let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
-        // Kaskadowe rzutowanie perspektywiczne zachowujące właściwą głębię
+        // Rzutowanie perspektywiczne kaskadowe zachowujące głębię geometryczną
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
         if (currentObject === 6 || currentObject === 7) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
@@ -483,9 +486,14 @@ function animate() {
     angleXW += speed; angleYW += speed; 
     projectND();
 
-    if (currentObject === 1) {
+    // Sprawdzenie czy obiekt należy do rodziny hipersześcianów lub simplexu wyższych wymiarów
+    const isHypercubeType = (currentObject === 1 || currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12);
+
+    if (isHypercubeType) {
+        // NAPRAWIONO: Kostki 5D, 6D i 7D mają teraz identycznie zablokowaną rotację sceniczną jak Tesserakt (1)
         vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
+        // Pozostałe obiekty (jak butelka Kleina) obracają się płynnie wokół Y
         vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
     }
     renderer.render(scene, camera);
