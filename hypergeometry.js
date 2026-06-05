@@ -33,7 +33,8 @@ let edges = [];
 let spheres = [];
 let lineGeometries = [];
 
-let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0; 
+// Dodajemy dodatkową oś rotacji angleZS dla wymiaru 8D
+let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0, angleZS = 0; 
 let currentObject = 1; 
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
@@ -57,7 +58,8 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12) {
+    // Obiekt 14 (8D) dołącza do grupy obiektów z zablokowaną rotacją 3D
+    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
@@ -94,7 +96,7 @@ function loadTesseract() {
         for (let y of [-1, 1]) {
             for (let z of [-1, 1]) {
                 for (let w of [-1, 1]) {
-                    verticesND.push({x: x * 0.8, y: y * 0.8, z: z * 0.8, w: w * 0.8, v: 0, u: 0, t: 0});
+                    verticesND.push({x: x * 0.8, y: y * 0.8, z: z * 0.8, w: w * 0.8, v: 0, u: 0, t: 0, s: 0});
                 }
             }
         }
@@ -116,11 +118,11 @@ function loadPentachor() {
     clearGeometry(0.05);
     const r = 0.9; 
     verticesND = [
-        { x: r*1,  y: r*1,  z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: r*1,  y: -r*1, z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -r*1, y: r*1,  z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -r*1, y: -r*1, z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: 0,    y: 0,    z: 0,    w: 1.8*r,   v: 0, u: 0, t: 0 }
+        { x: r*1,  y: r*1,  z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0, s: 0 },
+        { x: r*1,  y: -r*1, z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0, s: 0 },
+        { x: -r*1, y: r*1,  z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0, s: 0 },
+        { x: -r*1, y: -r*1, z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0, s: 0 },
+        { x: 0,    y: 0,    z: 0,    w: 1.8*r,   v: 0, u: 0, t: 0, s: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) { edges.push([i, j]); }
@@ -130,7 +132,7 @@ function loadPentachor() {
 
 // --- DALSZY CIĄG W BLOKU NR 2 ---
 
-// --- CIĄG DALSZY GENERATORÓW GEOMETRII (3 - 13) ---
+// --- CIĄG DALSZY GENERATORÓW GEOMETRII (3 - 14) ---
 
 function load24Cell() {
     clearGeometry(0.035);
@@ -146,7 +148,7 @@ function load24Cell() {
         }
     }
     baseVertices.forEach(v => {
-        verticesND.push({ x: v[0] * 1.3, y: v[1] * 1.3, z: v[2] * 1.3, w: v[3] * 1.3, v: 0, u: 0, t: 0 });
+        verticesND.push({ x: v[0] * 1.3, y: v[1] * 1.3, z: v[2] * 1.3, w: v[3] * 1.3, v: 0, u: 0, t: 0, s: 0 });
     });
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
@@ -163,10 +165,10 @@ function load24Cell() {
 function load16Cell() {
     clearGeometry(0.045);
     verticesND = [
-        {x: 1.2, y: 0, z: 0, w: 0, v: 0, u: 0, t: 0}, {x: -1.2, y: 0, z: 0, w: 0, v: 0, u: 0, t: 0},
-        {x: 0, y: 1.2, z: 0, w: 0, v: 0, u: 0, t: 0}, {x: 0, y: -1.2, z: 0, w: 0, v: 0, u: 0, t: 0},
-        {x: 0, y: 0, z: 1.2, w: 0, v: 0, u: 0, t: 0}, {x: 0, y: 0, z: -1.2, w: 0, v: 0, u: 0, t: 0},
-        {x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0, t: 0}, {x: 0, y: 0, z: 0, w: -1.2, v: 0, u: 0, t: 0}
+        {x: 1.2, y: 0, z: 0, w: 0, v: 0, u: 0, t: 0, s: 0}, {x: -1.2, y: 0, z: 0, w: 0, v: 0, u: 0, t: 0, s: 0},
+        {x: 0, y: 1.2, z: 0, w: 0, v: 0, u: 0, t: 0, s: 0}, {x: 0, y: -1.2, z: 0, w: 0, v: 0, u: 0, t: 0, s: 0},
+        {x: 0, y: 0, z: 1.2, w: 0, v: 0, u: 0, t: 0, s: 0}, {x: 0, y: 0, z: -1.2, w: 0, v: 0, u: 0, t: 0, s: 0},
+        {x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0, t: 0, s: 0}, {x: 0, y: 0, z: 0, w: -1.2, v: 0, u: 0, t: 0, s: 0}
     ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
@@ -181,12 +183,12 @@ function load5DSimplex() {
     clearGeometry(0.05);
     const r = 1.1;
     verticesND = [
-        { x: r,  y: 0,  z: 0,  w: 0,  v: -0.3*r, u: 0, t: 0 },
-        { x: 0,  y: r,  z: 0,  w: 0,  v: -0.3*r, u: 0, t: 0 },
-        { x: 0,  y: 0,  z: r,  w: 0,  v: -0.3*r, u: 0, t: 0 },
-        { x: 0,  y: 0,  z: 0,  w: r,  v: -0.3*r, u: 0, t: 0 },
-        { x: 0,  y: 0,  z: 0,  w: 0,  v: 1.2*r,  u: 0, t: 0 },
-        { x: -0.4*r, y: -0.4*r, z: -0.4*r, w: -0.4*r, v: -0.3*r, u: 0, t: 0 }
+        { x: r,  y: 0,  z: 0,  w: 0,  v: -0.3*r, u: 0, t: 0, s: 0 },
+        { x: 0,  y: r,  z: 0,  w: 0,  v: -0.3*r, u: 0, t: 0, s: 0 },
+        { x: 0,  y: 0,  z: r,  w: 0,  v: -0.3*r, u: 0, t: 0, s: 0 },
+        { x: 0,  y: 0,  z: 0,  w: r,  v: -0.3*r, u: 0, t: 0, s: 0 },
+        { x: 0,  y: 0,  z: 0,  w: 0,  v: 1.2*r,  u: 0, t: 0, s: 0 },
+        { x: -0.4*r, y: -0.4*r, z: -0.4*r, w: -0.4*r, v: -0.3*r, u: 0, t: 0, s: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) { edges.push([i, j]); }
@@ -195,14 +197,14 @@ function load5DSimplex() {
 }
 
 function loadHekterakt() {
-    clearGeometry(0.025);
+    clearGeometry(0.023);
     for (let x of [-1, 1]) {
         for (let y of [-1, 1]) {
             for (let z of [-1, 1]) {
                 for (let w of [-1, 1]) {
                     for (let v of [-1, 1]) {
                         for (let u of [-1, 1]) {
-                            verticesND.push({ x: x * 0.65, y: y * 0.65, z: z * 0.65, w: w * 0.65, v: v * 0.65, u: u * 0.65, t: 0 });
+                            verticesND.push({ x: x * 0.65, y: y * 0.65, z: z * 0.65, w: w * 0.65, v: v * 0.65, u: u * 0.65, t: 0, s: 0 });
                         }
                     }
                 }
@@ -233,7 +235,7 @@ function loadHepterakt() {
                     for (let v of [-1, 1]) {
                         for (let u of [-1, 1]) {
                             for (let t of [-1, 1]) {
-                                verticesND.push({ x: x * 0.6, y: y * 0.6, z: z * 0.6, w: w * 0.6, v: v * 0.6, u: u * 0.6, t: t * 0.6 });
+                                verticesND.push({ x: x * 0.6, y: y * 0.6, z: z * 0.6, w: w * 0.6, v: v * 0.6, u: u * 0.6, t: t * 0.6, s: 0 });
                             }
                         }
                     }
@@ -262,7 +264,7 @@ function loadHyperPyramid() {
     const phi = (1 + Math.sqrt(5)) / 2; const r = 0.7; const baseW = -0.4;
     for (let x of [-1, 1]) {
         for (let y of [-1, 1]) {
-            for (let z of [-1, 1]) { verticesND.push({ x: x*r, y: y*r, z: z*r, w: baseW, v: 0, u: 0, t: 0 }); }
+            for (let z of [-1, 1]) { verticesND.push({ x: x*r, y: y*r, z: z*r, w: baseW, v: 0, u: 0, t: 0, s: 0 }); }
         }
     }
     const p = phi * r; const ip = (1/phi) * r;
@@ -271,7 +273,7 @@ function loadHyperPyramid() {
         [ip, p, 0], [-ip, p, 0], [ip, -p, 0], [-ip, -p, 0],
         [p, 0, ip], [-p, 0, ip], [p, 0, -ip], [-p, 0, -ip]
     ];
-    pairs.forEach(coord => { verticesND.push({ x: coord[0], y: coord[1], z: coord[2], w: baseW, v: 0, u: 0, t: 0 }); });
+    pairs.forEach(coord => { verticesND.push({ x: coord[0], y: coord[1], z: coord[2], w: baseW, v: 0, u: 0, t: 0, s: 0 }); });
 
     const targetDistSq = Math.pow(2 * r / phi, 2);
     for (let i = 0; i < 20; i++) {
@@ -281,23 +283,19 @@ function loadHyperPyramid() {
         }
     }
     const apexIndex = verticesND.length;
-    verticesND.push({ x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0, t: 0 });
+    verticesND.push({ x: 0, y: 0, z: 0, w: 1.2, v: 0, u: 0, t: 0, s: 0 });
     for (let i = 0; i < 20; i++) { edges.push([i, apexIndex]); }
     buildThreeObjects();
 }
 
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 36; 
-    const stepsV = 36; 
-
+    const stepsU = 36; const stepsV = 36; 
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI; 
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2; 
-
             let x, y, z, w;
-
             if (u < Math.PI / 2) {
                 x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(u) * Math.cos(v);
                 z = -8 * Math.sin(u) - 2 * (1 - Math.cos(u) / 2) * Math.sin(u) * Math.cos(v);
@@ -305,22 +303,11 @@ function loadKleinBottle() {
                 x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(v + Math.PI);
                 z = -8 * Math.sin(u);
             }
-
-            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
-            w = Math.sin(2 * u) * Math.cos(v) * 1.5;
-
+            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v); w = Math.sin(2 * u) * Math.cos(v) * 1.5;
             const scaleFactor = 0.18; 
-            
-            verticesND.push({ 
-                x: x * scaleFactor, 
-                y: y * scaleFactor, 
-                z: (z + 3.5) * scaleFactor, 
-                w: w * scaleFactor, 
-                v: 0, u: 0, t: 0 
-            });
+            verticesND.push({ x: x * scaleFactor, y: y * scaleFactor, z: (z + 3.5) * scaleFactor, w: w * scaleFactor, v: 0, u: 0, t: 0, s: 0 });
         }
     }
-
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
@@ -340,7 +327,7 @@ function loadSpherinder() {
             let angle = (i / stepsSphere) * Math.PI * 2;
             let x = Math.cos(angle) * 0.8; let y = Math.sin(angle) * 0.8;
             let z = (wIdx % 2 === 0 ? 0.4 : -0.4) * Math.cos(angle * 2);
-            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
+            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0, s: 0 });
         }
     }
     for (let wIdx = 0; wIdx < stepsLength; wIdx++) {
@@ -357,24 +344,15 @@ function load5DCrossPolytope() {
     clearGeometry(0.045);
     const r = 1.2; 
     verticesND = [
-        { x:  r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x: -r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  r, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y: -r, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  r, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y: -0, z: -r, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  r, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w: -r, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  0, v:  r, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  0, v: -r, u: 0, t: 0 }
+        { x:  r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0, s: 0 }, { x: -r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0, s: 0 },
+        { x:  0, y:  r, z:  0, w:  0, v:  0, u: 0, t: 0, s: 0 }, { x:  0, y: -r, z:  0, w:  0, v:  0, u: 0, t: 0, s: 0 },
+        { x:  0, y:  0, z:  r, w:  0, v:  0, u: 0, t: 0, s: 0 }, { x:  0, y: -0, z: -r, w:  0, v:  0, u: 0, t: 0, s: 0 },
+        { x:  0, y:  0, z:  0, w:  r, v:  0, u: 0, t: 0, s: 0 }, { x:  0, y:  0, z:  0, w: -r, v:  0, u: 0, t: 0, s: 0 },
+        { x:  0, y:  0, z:  0, w:  0, v:  r, u: 0, t: 0, s: 0 }, { x:  0, y:  0, z:  0, w:  0, v: -r, u: 0, t: 0, s: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
-            if (i === 0 && j === 1) continue;
-            if (i === 2 && j === 3) continue;
-            if (i === 4 && j === 5) continue;
-            if (i === 6 && j === 7) continue;
-            if (i === 8 && j === 9) continue;
+            if ((i===0 && j===1) || (i===2 && j===3) || (i===4 && j===5) || (i===6 && j===7) || (i===8 && j===9)) continue;
             edges.push([i, j]);
         }
     }
@@ -384,12 +362,10 @@ function load5DCrossPolytope() {
 function load5DHypercube() {
     clearGeometry(0.035);
     for (let i = 0; i < 32; i++) {
-        let x = (i & 1)  ? 0.65 : -0.65;
-        let y = (i & 2)  ? 0.65 : -0.65;
-        let z = (i & 4)  ? 0.65 : -0.65;
-        let w = (i & 8)  ? 0.65 : -0.65;
+        let x = (i & 1)  ? 0.65 : -0.65; let y = (i & 2)  ? 0.65 : -0.65;
+        let z = (i & 4)  ? 0.65 : -0.65; let w = (i & 8)  ? 0.65 : -0.65;
         let v = (i & 16) ? 0.65 : -0.65;
-        verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: 0, t: 0 });
+        verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: 0, t: 0, s: 0 });
     }
     for (let i = 0; i < 32; i++) {
         for (let j = i + 1; j < 32; j++) {
@@ -407,34 +383,48 @@ function load5DHypercube() {
 
 function loadDuocylinder() {
     clearGeometry(0.028); 
-    const stepsU = 20; 
-    const stepsV = 20; 
-    const r1 = 0.95;    
-    const r2 = 0.95;
-
+    const stepsU = 20; const stepsV = 20; const r1 = 0.95; const r2 = 0.95;
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI * 2;
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2;
-            
-            let x = r1 * Math.cos(u);
-            let y = r1 * Math.sin(u);
-            let z = r2 * Math.cos(v);
-            let w = r2 * Math.sin(v);
-
-            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
+            let x = r1 * Math.cos(u); let y = r1 * Math.sin(u);
+            let z = r2 * Math.cos(v); let w = r2 * Math.sin(v);
+            verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0, s: 0 });
         }
     }
-
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            
-            let nextU = ((i + 1) % stepsU) * stepsV + j;
-            edges.push([current, nextU]);
-            
-            let nextV = i * stepsV + ((j + 1) % stepsV);
-            edges.push([current, nextV]);
+            edges.push([current, ((i + 1) % stepsU) * stepsV + j]);
+            edges.push([current, i * stepsV + ((j + 1) % stepsV)]);
+        }
+    }
+    buildThreeObjects();
+}
+
+// NOŚNIK GEOMETRII 14: OKTERAKT (8D)
+function loadOkterakt() {
+    clearGeometry(0.008); // Bardzo małe sfery ze względu na gęstość wierzchołków
+    for (let i = 0; i < 256; i++) {
+        let x = (i & 1)   ? 0.55 : -0.55; let y = (i & 2)   ? 0.55 : -0.55;
+        let z = (i & 4)   ? 0.55 : -0.55; let w = (i & 8)   ? 0.55 : -0.55;
+        let v = (i & 16)  ? 0.55 : -0.55; let u = (i & 32)  ? 0.55 : -0.55;
+        let t = (i & 64)  ? 0.55 : -0.55; let s = (i & 128) ? 0.55 : -0.55;
+        verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: u, t: t, s: s });
+    }
+    for (let i = 0; i < 256; i++) {
+        for (let j = i + 1; j < 256; j++) {
+            let diff = 0;
+            if (verticesND[i].x !== verticesND[j].x) diff++;
+            if (verticesND[i].y !== verticesND[j].y) diff++; 
+            if (verticesND[i].z !== verticesND[j].z) diff++;
+            if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++;
+            if (verticesND[i].u !== verticesND[j].u) diff++;
+            if (verticesND[i].t !== verticesND[j].t) diff++;
+            if (verticesND[i].s !== verticesND[j].s) diff++;
+            if (diff === 1) edges.push([i, j]);
         }
     }
     buildThreeObjects();
@@ -444,13 +434,12 @@ function loadDuocylinder() {
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
-    const isHighDimCube = (currentObject === 6 || currentObject === 7 || currentObject === 12);
+    const isHighDimCube = (currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14);
 
     verticesND.forEach(p => {
-        let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
+        let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t, s = p.s;
 
-        // DLA KOSTEK WYŻSZYCH WYMIARÓW ZAMRAŻAMY ROTACJE POWYŻEJ WYMIARU 4D (V, U, T)
-        // Pozwala to uzyskać czysty, symetryczny efekt "wywracania" z GIF-a bez zniekształceń.
+        // Jeśli obiekt to hiperkostka wyższego rzędu (5D-8D), zamrażamy rotację wymiarów powyżej 4D
         if (!isHighDimCube) {
             if (currentObject === 7) {
                 let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
@@ -476,9 +465,11 @@ function projectND() {
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
         const dist = 2.0;
-        if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
-        if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
-        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
+        // Kaskadowe rzutowanie perspektywiczne od najwyższego wymiaru w dół
+        if (currentObject === 14) { const f8D = 1 / (dist - s); x *= f8D; y *= f8D; z *= f8D; w *= f8D; v *= f8D; u *= f8D; t *= f8D; }
+        if (currentObject === 7 || currentObject === 14) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
+        if (currentObject === 6 || currentObject === 14) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
+        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12 || currentObject === 14) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
         }
 
@@ -492,10 +483,9 @@ function projectND() {
         else if (currentObject === 6) scale = 2.8; 
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.5; 
+        else if (currentObject === 14) scale = 3.6; // Duża skala z racji głębokiej perspektywy
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
-        else if (currentObject === 13) {
-            scale = window.innerWidth < 600 ? 2.2 : 3.2;
-        }
+        else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
@@ -529,10 +519,10 @@ function projectND() {
 function animate() {
     requestAnimationFrame(animate);
     const speed = 0.012; 
-    angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
+    angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; angleZS += speed * 0.15;
     projectND();
 
-    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12) {
+    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14) {
         vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
         vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
@@ -543,7 +533,7 @@ function animate() {
 // --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 13) currentObject = 1;
+    if (currentObject > 14) currentObject = 1;
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -559,6 +549,7 @@ function switchObject() {
         case 11: load5DCrossPolytope(); break; 
         case 12: load5DHypercube(); break;     
         case 13: loadDuocylinder(); break; 
+        case 14: loadOkterakt(); break;
     }
     return currentObject;
 }
