@@ -78,7 +78,7 @@
     <script src="hypergeometry.js"></script>
 
     <script>
-        // Tablica z opisami obiektów dla UI (Rozszerzona do 13 pozycji i naprawiona składniowo)
+        // Tablica z opisami obiektów dla UI - naprawiona kropka ze średnikiem na końcu obiektu 14
         const objectsUI = {
             1: { title: "1. Teserakt (Hiperkostka 4D)", desc: "Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D. Posiada 16 wierzchołków i 32 krawędzie." },
             2: { title: "2. Pentachor (5-Komórka)", desc: "Matematycznie wycentrowana 4-wymiarowa odmiana czworościanu. Posiada 5 wierzchołków połączonych w idealną, harmonijną sieć 10 krawędzi, która płynnie rotuje w kadrze." },
@@ -93,8 +93,8 @@
             11: { title: "11. Ortopleks 5D (Cross-Polytope)", desc: "Pięciowymiarowy odpowiednik ośmiościanu foremnego. Posiada 10 wierzchołków i 40 krawędzi. Jego geometryczna struktura tworzy hipnotyzujący wzór podczas rotacji w głębokich wymiarach przestrzeni 5D." },
             12: { title: "12. Penterakt (Hipersześcian 5D)", desc: "Kostka w przestrzeni pięciowymiarowej wygenerowana wektorowo! Składa się z 32 wierzchołków i 80 krawędzi. To co widzisz, to podwójny rzut perspektywiczny (z 5D do 4D, a następnie do przestrzeni 3D) ujawniający hipnotyzujące przeplatanie linii." },
             13: { title: "13. Dwucylinder (Duocylinder 4D)", desc: "Czterowymiarowy obiekt będący iloczynem kartezjańskim dwóch kół. Posiada unikalną cechę: cała jego powierzchnia jest idealnie zakrzywiona i zamknięta w 4D. W rzucie trójwymiarowym ujawnia się jako fascynująca, spleciona klatka przypominająca podwójny torus." },
-            14: { title: "14. Okterakt (Hipersześcian 8D)", desc: "Kostka w przestrzeni ośmiowymiarowej! Składa się z porażającej liczby 256 wierzchołków i aż 1024 krawędzi. Wielostopniowy rzut perspektywiczny z wymiaru 8D, poprzez kolejne hiperprzestrzenie, aż do układu 3D, generuje niezwykle skomplikowaną, geometryczną strukturę przechodzącą symetrycznie przez sam środek wymiarowy." };
-
+            14: { title: "14. Okterakt (Hipersześcian 8D)", desc: "Kostka w przestrzeni ośmiowymiarowej! Składa się z porażającej liczby 256 wierzchołków i aż 1024 krawędzi. Wielostopniowy rzut perspektywiczny z wymiaru 8D, poprzez kolejne hiperprzestrzenie, aż do układu 3D, generuje niezwykle skomplikowaną, geometryczną strukturę przechodzącą symetrycznie przez sam środek wymiarowy." }
+        };
 
         const titleEl = document.getElementById('object-title');
         const descEl = document.getElementById('object-desc');
@@ -108,8 +108,8 @@
             titleEl.innerText = objectsUI[nextID].title;
             descEl.innerText = objectsUI[nextID].desc;
 
-            // Zmiana napisu na przycisku przed dojściem do końca pętli
-            if (nextID === 13) {
+            // Zmieniono warunek z 13 na 14, aby tekst zmieniał się prawidłowo przed powrotem do Teseraktu
+            if (nextID === 14) {
                 nextBtn.innerText = "Zobacz Teserakt";
             } else {
                 nextBtn.innerText = "Następny obiekt";
