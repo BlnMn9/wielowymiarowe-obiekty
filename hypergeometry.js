@@ -320,11 +320,8 @@ function loadKleinBottle() {
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            let nextV = i * stepsV + ((j + 1) % stepsV);
-            edges.push([current, nextV]);
-            
-            let nextU = ((i + 1) % stepsU) * stepsV + j;
-            edges.push([current, nextU]);
+            let nextV = i * stepsV + ((j + 1) % stepsV); edges.push([current, nextV]);
+            let nextU = ((i + 1) % stepsU) * stepsV + j; edges.push([current, nextU]);
         }
     }
     buildThreeObjects();
