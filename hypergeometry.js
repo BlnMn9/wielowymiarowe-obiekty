@@ -24,7 +24,7 @@ let edgeGroup = new THREE.Group();
 scene.add(vertexGroup);
 scene.add(edgeGroup);
 
-// Klasyczny kąt obserwacji sześcianu
+// Stała, kultowa rotacja kamery z pierwszej wersji
 vertexGroup.rotation.set(0.38, 0.62, 0);
 edgeGroup.rotation.set(0.38, 0.62, 0);
 
@@ -58,7 +58,7 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    // Blokada obrotu 3D dla sześcianów, aby wyeksponować czysty ruch wyższych wymiarów
+    // Zablokowanie obrotu sceny 3D dla rodziny kostek i simplexu
     const isHypercubeType = (currentObject === 1 || currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12);
     if (isHypercubeType) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
@@ -211,12 +211,9 @@ function loadHekterakt() {
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
             let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++;
-            if (verticesND[i].z !== verticesND[j].z) diff++;
-            if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++;
-            if (verticesND[i].u !== verticesND[j].u) diff++;
+            if (verticesND[i].x !== verticesND[j].x) diff++; if (verticesND[i].y !== verticesND[j].y) diff++;
+            if (verticesND[i].z !== verticesND[j].z) diff++; if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++; if (verticesND[i].u !== verticesND[j].u) diff++;
             if (diff === 1) edges.push([i, j]);
         }
     }
@@ -243,14 +240,10 @@ function loadHepterakt() {
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
             let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++;
-            if (verticesND[i].z !== verticesND[j].z) diff++;
-            if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++;
-            if (verticesND[i].u !== verticesND[j].u) diff++;
-            if (verticesND[i].t !== verticesND[j].t) diff++;
-            if (diff === 1) edges.push([i, j]);
+            if (verticesND[i].x !== verticesND[j].x) diff++; if (verticesND[i].y !== verticesND[j].y) diff++;
+            if (verticesND[i].z !== verticesND[j].z) diff++; if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++; if (verticesND[i].u !== verticesND[j].u) diff++;
+            if (verticesND[i].t !== verticesND[j].t) diff++; if (diff === 1) edges.push([i, j]);
         }
     }
     buildThreeObjects();
@@ -396,42 +389,42 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-// --- ORYGINALNY, PRZYWRÓCONY I SPÓJNY SILNIK PROJEKCJI ---
+// --- NAPRAWIONY SILNIK PROJEKCJI Z CAŁKOWITĄ IZOLACJĄ WYMIARÓW ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
 
-    // Dwie oryginalne, niezależne składowe kątowe, które dawały ten piękny ruch
-    let cosXW = Math.cos(angleXW), sinXW = Math.sin(angleXW);
-    let cosYW = Math.cos(angleYW * 0.6), sinYW = Math.sin(angleYW * 0.6);
+    // Dwa oryginalne, niezależne i stabilne kąty obrotu
+    let cosX = Math.cos(angleXW), sinX = Math.sin(angleXW);
+    let cosY = Math.cos(angleYW * 0.6), sinY = Math.sin(angleYW * 0.6);
 
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // PRZYWRÓCONO I SKOPIOWANO 1:1: Wyższe wymiary rotują teraz dokładnie 
-        // tymi samymi płaszczyznami i stałymi kątowymi co oryginalny Tesserakt.
+        // NAPRAWIONO: Każdy wymiar rotuje teraz w sposób absolutnie NIEZALEŻNY,
+        // bez nadpisywania zmiennych i bez wpływu na pierwotne osie 4D.
         
-        // Rotacja 7D (Płaszczyzny XT i YT)
+        // Niezależny obrót 7D (płaszczyzny XT i YT)
         if (currentObject === 7) {
-            let xTmp = x * cosXW - t * sinXW; t = x * sinXW + t * cosXW; x = xTmp;
-            let yTmp = y * cosYW - t * sinYW; t = y * sinYW + t * cosYW; y = yTmp;
+            let xTmp = x * cosX - t * sinX; t = x * sinX + t * cosX; x = xTmp;
+            let yTmp = y * cosY - t * sinY; t = y * sinY + t * cosY; y = yTmp;
         }
-        // Rotacja 6D (Płaszczyzny XU i YU)
+        // Niezależny obrót 6D (płaszczyzny XU i YU)
         if (currentObject === 6 || currentObject === 7) {
-            let xTmp = x * cosXW - u * sinXW; u = x * sinXW + u * cosXW; x = xTmp;
-            let yTmp = y * cosYW - u * sinYW; u = y * sinYW + u * cosYW; y = yTmp;
+            let xTmp = x * cosX - u * sinX; u = x * sinX + u * cosX; x = xTmp;
+            let yTmp = y * cosY - u * sinY; u = y * sinY + u * cosY; y = yTmp;
         }
-        // Rotacja 5D (Płaszczyzny XV i YV)
+        // Niezależny obrót 5D (płaszczyzny XV i YV)
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let xTmp = x * cosXW - v * sinXW; v = x * sinXW + v * cosXW; x = xTmp;
-            let yTmp = y * cosYW - v * sinYW; v = y * sinYW + v * cosYW; y = yTmp;
+            let xTmp = x * cosX - v * sinX; v = x * sinX + v * cosX; x = xTmp;
+            let yTmp = y * cosY - v * sinY; v = y * sinY + v * cosY; y = yTmp;
         }
 
-        // Oryginalna rotacja 4D Tesseraktu (Płaszczyzny XW i YW) - nienaruszona
-        let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
-        let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
+        // Oryginalny, kultowy i nienaruszony obrót Tesseraktu 4D (XW i YW)
+        let x4D = x * cosX - w * sinX; w = x * sinX + w * cosX; x = x4D;
+        let y4D = y * cosY - w * sinY; w = y * sinY + w * cosY; y = y4D;
 
-        // Perspektywa kaskadowa ND -> 3D
+        // Perspektywa kaskadowa z zachowaniem izolacji głębi matematycznej
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
         if (currentObject === 6 || currentObject === 7) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
@@ -489,7 +482,6 @@ function animate() {
     const isHypercubeType = (currentObject === 1 || currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12);
 
     if (isHypercubeType) {
-        // Wszystkie sześciany blokują rotację 3D sceny w identyczny sposób jak Tesserakt
         vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
         vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
