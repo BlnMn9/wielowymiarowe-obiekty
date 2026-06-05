@@ -403,9 +403,9 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-// NOWY OBIEKT: OKTERAKT (8D)
+// ZAKTUALIZOWANO: Większe sfery wierzchołków (0.025) dla lepszej widoczności
 function loadOkterakt() {
-    clearGeometry(0.008); // Bardzo małe wierzchołki, by siatka była czytelna
+    clearGeometry(0.025); 
     for (let i = 0; i < 256; i++) {
         let x = (i & 1)   ? 0.55 : -0.55; let y = (i & 2)   ? 0.55 : -0.55;
         let z = (i & 4)   ? 0.55 : -0.55; let w = (i & 8)   ? 0.55 : -0.55;
@@ -439,7 +439,6 @@ function projectND() {
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t, s = p.s;
 
-        // Blokada rotacji dla wyższych hiperkostek w celu zachowania idealnej symetrii
         if (!isHighDimCube) {
             if (currentObject === 7) {
                 let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
@@ -465,7 +464,6 @@ function projectND() {
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
         const dist = 2.0;
-        // Kaskadowe perspektywiczne rzutowanie wymiarów wyższych
         if (currentObject === 14) { const f8D = 1 / (dist - s); x *= f8D; y *= f8D; z *= f8D; w *= f8D; v *= f8D; u *= f8D; t *= f8D; }
         if (currentObject === 7 || currentObject === 14) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
         if (currentObject === 6 || currentObject === 14) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
@@ -483,7 +481,7 @@ function projectND() {
         else if (currentObject === 6) scale = 2.8; 
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.5; 
-        else if (currentObject === 14) scale = 3.6; 
+        else if (currentObject === 14) scale = 5.8; // ZAKTUALIZOWANO: Zwiększono skalę z 3.6 na 5.8 dla potężnego efektu rozciągnięcia geometrii
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
         else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
 
@@ -533,7 +531,6 @@ function animate() {
 // --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    // NAPRAWIONO: Zmieniono z 13 na 14, aby system pozwalał przejść do nowego obiektu
     if (currentObject > 14) currentObject = 1;
 
     switch(currentObject) {
