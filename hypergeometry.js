@@ -24,9 +24,11 @@ let edgeGroup = new THREE.Group();
 scene.add(vertexGroup);
 scene.add(edgeGroup);
 
-// Stała, kultowa rotacja kamery z pierwszej wersji
-vertexGroup.rotation.set(0.38, 0.62, 0);
-edgeGroup.rotation.set(0.38, 0.62, 0);
+// IDEALNIE STAŁY, NIERUCHOMY KĄT OBSERWACJI (ZGODNY Z WIKIPEDIĄ)
+const FIX_ROT_X = 0.38;
+const FIX_ROT_Y = 0.62;
+vertexGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
+edgeGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
 
 // --- ZMIENNE STRUKTURALNE ---
 let verticesND = []; 
@@ -34,7 +36,8 @@ let edges = [];
 let spheres = [];
 let lineGeometries = [];
 
-let angleXW = 0, angleYW = 0; 
+// Tylko jeden zmieniający się kąt – odpowiedzialny wyłącznie za czysty ruch z GIFa
+let hyperAngle = 0; 
 let currentObject = 1; 
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
@@ -58,15 +61,9 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    // Zablokowanie obrotu sceny 3D dla rodziny kostek i simplexu
-    const isHypercubeType = (currentObject === 1 || currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12);
-    if (isHypercubeType) {
-        vertexGroup.rotation.set(0.38, 0.62, 0);
-        edgeGroup.rotation.set(0.38, 0.62, 0);
-    } else {
-        vertexGroup.rotation.set(0.5, 0.5, 0);
-        edgeGroup.rotation.set(0.5, 0.5, 0);
-    }
+    // Wymuszenie stałego kąta dla wszystkich obiektów – brak jakichkolwiek rotacji sceny
+    vertexGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
+    edgeGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
 }
 
 function buildThreeObjects() {
@@ -89,7 +86,7 @@ function buildThreeObjects() {
     });
 }
 
-// --- GENERATORY GEOMETRII (1 - 8) ---
+// --- GENERATORY GEOMETRII ---
 
 function loadTesseract() {
     clearGeometry(0.04);
@@ -389,42 +386,41 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-// --- NAPRAWIONY SILNIK PROJEKCJI Z CAŁKOWITĄ IZOLACJĄ WYMIARÓW ---
+// --- SILNIK PROJEKCJI: STABILNY TRÓJWYMIAR + CZYSTA ROTACJA WYMIAROWA Z WIKIPEDII ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
 
-    // Dwa oryginalne, niezależne i stabilne kąty obrotu
-    let cosX = Math.cos(angleXW), sinX = Math.sin(angleXW);
-    let cosY = Math.cos(angleYW * 0.6), sinY = Math.sin(angleYW * 0.6);
+    // Dokładne funkcje trygonometryczne odpowiadające za ruch z Wikipedii (płaszczyzny XW oraz ZW)
+    let cosA = Math.cos(hyperAngle), sinA = Math.sin(hyperAngle);
 
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // NAPRAWIONO: Każdy wymiar rotuje teraz w sposób absolutnie NIEZALEŻNY,
-        // bez nadpisywania zmiennych i bez wpływu na pierwotne osie 4D.
+        // MATEMATYCZNA REPLIKACJA RUCHU DLA WYŻSZYCH WYMIARÓW:
+        // Każda dodatkowa składowa geometryczna wykonuje dokładnie tę samą transformację symetryczną
         
-        // Niezależny obrót 7D (płaszczyzny XT i YT)
+        // Czysta rotacja 7D (płaszczyzny XT i ZT)
         if (currentObject === 7) {
-            let xTmp = x * cosX - t * sinX; t = x * sinX + t * cosX; x = xTmp;
-            let yTmp = y * cosY - t * sinY; t = y * sinY + t * cosY; y = yTmp;
+            let xTmp = x * cosA - t * sinA; t = x * sinA + t * cosA; x = xTmp;
+            let zTmp = z * cosA - t * sinA; t = z * sinA + t * cosA; z = zTmp;
         }
-        // Niezależny obrót 6D (płaszczyzny XU i YU)
+        // Czysta rotacja 6D (płaszczyzny XU i ZU)
         if (currentObject === 6 || currentObject === 7) {
-            let xTmp = x * cosX - u * sinX; u = x * sinX + u * cosX; x = xTmp;
-            let yTmp = y * cosY - u * sinY; u = y * sinY + u * cosY; y = yTmp;
+            let xTmp = x * cosA - u * sinA; u = x * sinA + u * cosA; x = xTmp;
+            let zTmp = z * cosA - u * sinA; u = z * sinA + u * cosA; z = zTmp;
         }
-        // Niezależny obrót 5D (płaszczyzny XV i YV)
+        // Czysta rotacja 5D (płaszczyzny XV i ZV)
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let xTmp = x * cosX - v * sinX; v = x * sinX + v * cosX; x = xTmp;
-            let yTmp = y * cosY - v * sinY; v = y * sinY + v * cosY; y = yTmp;
+            let xTmp = x * cosA - v * sinA; v = x * sinA + v * cosA; x = xTmp;
+            let zTmp = z * cosA - v * sinA; v = z * sinA + v * cosA; z = zTmp;
         }
 
-        // Oryginalny, kultowy i nienaruszony obrót Tesseraktu 4D (XW i YW)
-        let x4D = x * cosX - w * sinX; w = x * sinX + w * cosX; x = x4D;
-        let y4D = y * cosY - w * sinY; w = y * sinY + w * cosY; y = y4D;
+        // DOKŁADNY, KLUCZOWY RUCH TESSERAKTU Z WIKIPEDII (płaszczyzny XW i ZW)
+        let x4D = x * cosA - w * sinA; w = x * sinA + w * cosA; x = x4D;
+        let z4D = z * cosA - w * sinA; w = z * sinA + w * cosA; z = z4D;
 
-        // Perspektywa kaskadowa z zachowaniem izolacji głębi matematycznej
+        // Perspektywa kaskadowa
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
         if (currentObject === 6 || currentObject === 7) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
@@ -475,17 +471,16 @@ function projectND() {
 
 function animate() {
     requestAnimationFrame(animate);
-    const speed = 0.012; 
-    angleXW += speed; angleYW += speed; 
+    
+    // Zwiększamy wyłącznie kąt wywracania hiperwymiarowego
+    hyperAngle += 0.015; 
     projectND();
 
-    const isHypercubeType = (currentObject === 1 || currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12);
+    // CAŁKOWITE USUNIĘCIE ROTACJI TRÓJWYMIAROWEJ (ZMIENNEJ) DLA WSZYSTKICH OBIEKTÓW. 
+    // Obiekt stoi idealnie sztywno w przestrzeni 3D.
+    vertexGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0); 
+    edgeGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
 
-    if (isHypercubeType) {
-        vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
-    } else {
-        vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
-    }
     renderer.render(scene, camera);
 }
 
