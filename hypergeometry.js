@@ -24,11 +24,8 @@ let edgeGroup = new THREE.Group();
 scene.add(vertexGroup);
 scene.add(edgeGroup);
 
-// IDEALNIE STAŁY, NIERUCHOMY KĄT OBSERWACJI (ZGODNY Z WIKIPEDIĄ)
-const FIX_ROT_X = 0.38;
-const FIX_ROT_Y = 0.62;
-vertexGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
-edgeGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
+vertexGroup.rotation.set(0.38, 0.62, 0);
+edgeGroup.rotation.set(0.38, 0.62, 0);
 
 // --- ZMIENNE STRUKTURALNE ---
 let verticesND = []; 
@@ -36,8 +33,7 @@ let edges = [];
 let spheres = [];
 let lineGeometries = [];
 
-// Tylko jeden zmieniający się kąt – odpowiedzialny wyłącznie za czysty ruch z GIFa
-let hyperAngle = 0; 
+let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0; 
 let currentObject = 1; 
 
 let sphereGeo = new THREE.SphereGeometry(0.04, 8, 8);
@@ -61,9 +57,13 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    // Wymuszenie stałego kąta dla wszystkich obiektów – brak jakichkolwiek rotacji sceny
-    vertexGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
-    edgeGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
+    if (currentObject === 1) {
+        vertexGroup.rotation.set(0.38, 0.62, 0);
+        edgeGroup.rotation.set(0.38, 0.62, 0);
+    } else {
+        vertexGroup.rotation.set(0.5, 0.5, 0);
+        edgeGroup.rotation.set(0.5, 0.5, 0);
+    }
 }
 
 function buildThreeObjects() {
@@ -86,7 +86,7 @@ function buildThreeObjects() {
     });
 }
 
-// --- GENERATORY GEOMETRII ---
+// --- GENERATORY GEOMETRII (1 - 8) ---
 
 function loadTesseract() {
     clearGeometry(0.04);
@@ -116,10 +116,10 @@ function loadPentachor() {
     clearGeometry(0.05);
     const r = 0.9; 
     verticesND = [
-        { x: 1*r,  y: 1*r,  z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: 1*r,  y: -1*r, z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -1*r, y: 1*r,  z: -1*r, w: -0.45*r, v: 0, u: 0, t: 0 },
-        { x: -1*r, y: -1*r, z: 1*r,  w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: r*1,  y: r*1,  z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: r*1,  y: -r*1, z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: -r*1, y: r*1,  z: -r*1, w: -0.45*r, v: 0, u: 0, t: 0 },
+        { x: -r*1, y: -r*1, z: r*1,  w: -0.45*r, v: 0, u: 0, t: 0 },
         { x: 0,    y: 0,    z: 0,    w: 1.8*r,   v: 0, u: 0, t: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
@@ -208,9 +208,12 @@ function loadHekterakt() {
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
             let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++; if (verticesND[i].y !== verticesND[j].y) diff++;
-            if (verticesND[i].z !== verticesND[j].z) diff++; if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++; if (verticesND[i].u !== verticesND[j].u) diff++;
+            if (verticesND[i].x !== verticesND[j].x) diff++;
+            if (verticesND[i].y !== verticesND[j].y) diff++;
+            if (verticesND[i].z !== verticesND[j].z) diff++;
+            if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++;
+            if (verticesND[i].u !== verticesND[j].u) diff++;
             if (diff === 1) edges.push([i, j]);
         }
     }
@@ -237,10 +240,14 @@ function loadHepterakt() {
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
             let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++; if (verticesND[i].y !== verticesND[j].y) diff++;
-            if (verticesND[i].z !== verticesND[j].z) diff++; if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++; if (verticesND[i].u !== verticesND[j].u) diff++;
-            if (verticesND[i].t !== verticesND[j].t) diff++; if (diff === 1) edges.push([i, j]);
+            if (verticesND[i].x !== verticesND[j].x) diff++;
+            if (verticesND[i].y !== verticesND[j].y) diff++;
+            if (verticesND[i].z !== verticesND[j].z) diff++;
+            if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++;
+            if (verticesND[i].u !== verticesND[j].u) diff++;
+            if (verticesND[i].t !== verticesND[j].t) diff++;
+            if (diff === 1) edges.push([i, j]);
         }
     }
     buildThreeObjects();
@@ -277,12 +284,16 @@ function loadHyperPyramid() {
 
 function loadKleinBottle() {
     clearGeometry(0.025);
-    const stepsU = 36; const stepsV = 36; 
+    const stepsU = 36; 
+    const stepsV = 36; 
+
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI; 
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2; 
+
             let x, y, z, w;
+
             if (u < Math.PI / 2) {
                 x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(u) * Math.cos(v);
                 z = -8 * Math.sin(u) - 2 * (1 - Math.cos(u) / 2) * Math.sin(u) * Math.cos(v);
@@ -290,16 +301,30 @@ function loadKleinBottle() {
                 x = 3 * Math.cos(u) * (1 + Math.sin(u)) + (2 * (1 - Math.cos(u) / 2)) * Math.cos(v + Math.PI);
                 z = -8 * Math.sin(u);
             }
-            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v); w = Math.sin(2 * u) * Math.cos(v) * 1.5;
+
+            y = 2 * (1 - Math.cos(u) / 2) * Math.sin(v);
+            w = Math.sin(2 * u) * Math.cos(v) * 1.5;
+
             const scaleFactor = 0.18; 
-            verticesND.push({ x: x * scaleFactor, y: y * scaleFactor, z: (z + 3.5) * scaleFactor, w: w * scaleFactor, v: 0, u: 0, t: 0 });
+            
+            verticesND.push({ 
+                x: x * scaleFactor, 
+                y: y * scaleFactor, 
+                z: (z + 3.5) * scaleFactor, 
+                w: w * scaleFactor, 
+                v: 0, u: 0, t: 0 
+            });
         }
     }
+
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            let nextV = i * stepsV + ((j + 1) % stepsV); edges.push([current, nextV]);
-            let nextU = ((i + 1) % stepsU) * stepsV + j; edges.push([current, nextU]);
+            let nextV = i * stepsV + ((j + 1) % stepsV);
+            edges.push([current, nextV]);
+            
+            let nextU = ((i + 1) % stepsU) * stepsV + j;
+            edges.push([current, nextU]);
         }
     }
     buildThreeObjects();
@@ -331,15 +356,24 @@ function load5DCrossPolytope() {
     clearGeometry(0.045);
     const r = 1.2; 
     verticesND = [
-        { x:  r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 }, { x: -r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  r, z:  0, w:  0, v:  0, u: 0, t: 0 }, { x:  0, y: -r, z:  0, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  r, w:  0, v:  0, u: 0, t: 0 }, { x:  0, y: -0, z: -r, w:  0, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  r, v:  0, u: 0, t: 0 }, { x:  0, y:  0, z:  0, w: -r, v:  0, u: 0, t: 0 },
-        { x:  0, y:  0, z:  0, w:  0, v:  r, u: 0, t: 0 }, { x:  0, y:  0, z:  0, w:  0, v: -r, u: 0, t: 0 }
+        { x:  r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
+        { x: -r, y:  0, z:  0, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y:  r, z:  0, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y: -r, z:  0, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y:  0, z:  r, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y: -0, z: -r, w:  0, v:  0, u: 0, t: 0 },
+        { x:  0, y:  0, z:  0, w:  r, v:  0, u: 0, t: 0 },
+        { x:  0, y:  0, z:  0, w: -r, v:  0, u: 0, t: 0 },
+        { x:  0, y:  0, z:  0, w:  0, v:  r, u: 0, t: 0 },
+        { x:  0, y:  0, z:  0, w:  0, v: -r, u: 0, t: 0 }
     ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
-            if (i === 0 && j === 1 || i === 2 && j === 3 || i === 4 && j === 5 || i === 6 && j === 7 || i === 8 && j === 9) continue;
+            if (i === 0 && j === 1) continue;
+            if (i === 2 && j === 3) continue;
+            if (i === 4 && j === 5) continue;
+            if (i === 6 && j === 7) continue;
+            if (i === 8 && j === 9) continue;
             edges.push([i, j]);
         }
     }
@@ -349,17 +383,22 @@ function load5DCrossPolytope() {
 function load5DHypercube() {
     clearGeometry(0.035);
     for (let i = 0; i < 32; i++) {
-        let x = (i & 1)  ? 0.65 : -0.65; let y = (i & 2)  ? 0.65 : -0.65;
-        let z = (i & 4)  ? 0.65 : -0.65; let w = (i & 8)  ? 0.65 : -0.65;
+        let x = (i & 1)  ? 0.65 : -0.65;
+        let y = (i & 2)  ? 0.65 : -0.65;
+        let z = (i & 4)  ? 0.65 : -0.65;
+        let w = (i & 8)  ? 0.65 : -0.65;
         let v = (i & 16) ? 0.65 : -0.65;
         verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: 0, t: 0 });
     }
     for (let i = 0; i < 32; i++) {
         for (let j = i + 1; j < 32; j++) {
             let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++; if (verticesND[i].y !== verticesND[j].y) diff++; 
-            if (verticesND[i].z !== verticesND[j].z) diff++; if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++; if (diff === 1) edges.push([i, j]);
+            if (verticesND[i].x !== verticesND[j].x) diff++;
+            if (verticesND[i].y !== verticesND[j].y) diff++; 
+            if (verticesND[i].z !== verticesND[j].z) diff++;
+            if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++;
+            if (diff === 1) edges.push([i, j]);
         }
     }
     buildThreeObjects();
@@ -367,63 +406,72 @@ function load5DHypercube() {
 
 function loadDuocylinder() {
     clearGeometry(0.028); 
-    const stepsU = 20; const stepsV = 20; const r1 = 0.95; const r2 = 0.95;
+    const stepsU = 20; 
+    const stepsV = 20; 
+    const r1 = 0.95;    
+    const r2 = 0.95;
+
     for (let i = 0; i < stepsU; i++) {
         let u = (i / stepsU) * Math.PI * 2;
         for (let j = 0; j < stepsV; j++) {
             let v = (j / stepsV) * Math.PI * 2;
-            let x = r1 * Math.cos(u); let y = r1 * Math.sin(u); let z = r2 * Math.cos(v); let w = r2 * Math.sin(v);
+            
+            let x = r1 * Math.cos(u);
+            let y = r1 * Math.sin(u);
+            let z = r2 * Math.cos(v);
+            let w = r2 * Math.sin(v);
+
             verticesND.push({ x: x, y: y, z: z, w: w, v: 0, u: 0, t: 0 });
         }
     }
+
     for (let i = 0; i < stepsU; i++) {
         for (let j = 0; j < stepsV; j++) {
             let current = i * stepsV + j;
-            let nextU = ((i + 1) % stepsU) * stepsV + j; edges.push([current, nextU]);
-            let nextV = i * stepsV + ((j + 1) % stepsV); edges.push([current, nextV]);
+            
+            let nextU = ((i + 1) % stepsU) * stepsV + j;
+            edges.push([current, nextU]);
+            
+            let nextV = i * stepsV + ((j + 1) % stepsV);
+            edges.push([current, nextV]);
         }
     }
     buildThreeObjects();
 }
 
-// --- SILNIK PROJEKCJI: STABILNY TRÓJWYMIAR + CZYSTA ROTACJA WYMIAROWA Z WIKIPEDII ---
+// --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
 
-    // Dokładne funkcje trygonometryczne odpowiadające za ruch z Wikipedii (płaszczyzny XW oraz ZW)
-    let cosA = Math.cos(hyperAngle), sinA = Math.sin(hyperAngle);
-
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // MATEMATYCZNA REPLIKACJA RUCHU DLA WYŻSZYCH WYMIARÓW:
-        // Każda dodatkowa składowa geometryczna wykonuje dokładnie tę samą transformację symetryczną
-        
-        // Czysta rotacja 7D (płaszczyzny XT i ZT)
         if (currentObject === 7) {
-            let xTmp = x * cosA - t * sinA; t = x * sinA + t * cosA; x = xTmp;
-            let zTmp = z * cosA - t * sinA; t = z * sinA + t * cosA; z = zTmp;
+            let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
+            let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
         }
-        // Czysta rotacja 6D (płaszczyzny XU i ZU)
-        if (currentObject === 6 || currentObject === 7) {
-            let xTmp = x * cosA - u * sinA; u = x * sinA + u * cosA; x = xTmp;
-            let zTmp = z * cosA - u * sinA; u = z * sinA + u * cosA; z = zTmp;
+        if (currentObject === 6) {
+            let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
+            let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
         }
-        // Czysta rotacja 5D (płaszczyzny XV i ZV)
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let xTmp = x * cosA - v * sinA; v = x * sinA + v * cosA; x = xTmp;
-            let zTmp = z * cosA - v * sinA; v = z * sinA + v * cosA; z = zTmp;
+            let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
+            let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
         }
 
-        // DOKŁADNY, KLUCZOWY RUCH TESSERAKTU Z WIKIPEDII (płaszczyzny XW i ZW)
-        let x4D = x * cosA - w * sinA; w = x * sinA + w * cosA; x = x4D;
-        let z4D = z * cosA - w * sinA; w = z * sinA + w * cosA; z = z4D;
+        let factorXW = 1.0;
+        let factorYW = (currentObject === 1) ? 0.0 : 0.6; 
 
-        // Perspektywa kaskadowa
+        let cosXW = Math.cos(angleXW * factorXW), sinXW = Math.sin(angleXW * factorXW);
+        let x1 = x * cosXW - w * sinXW; w = x * sinXW + w * cosXW; x = x1;
+
+        let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
+        let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
+
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
-        if (currentObject === 6 || currentObject === 7) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
+        if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
         }
@@ -439,7 +487,9 @@ function projectND() {
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.3; 
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
-        else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
+        else if (currentObject === 13) {
+            scale = window.innerWidth < 600 ? 2.2 : 3.2;
+        }
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
@@ -469,21 +519,22 @@ function projectND() {
     });
 }
 
+// --- GLOBALNA PĘTLA ANIMACJI ---
 function animate() {
     requestAnimationFrame(animate);
-    
-    // Zwiększamy wyłącznie kąt wywracania hiperwymiarowego
-    hyperAngle += 0.015; 
+    const speed = 0.012; 
+    angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
     projectND();
 
-    // CAŁKOWITE USUNIĘCIE ROTACJI TRÓJWYMIAROWEJ (ZMIENNEJ) DLA WSZYSTKICH OBIEKTÓW. 
-    // Obiekt stoi idealnie sztywno w przestrzeni 3D.
-    vertexGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0); 
-    edgeGroup.rotation.set(FIX_ROT_X, FIX_ROT_Y, 0);
-
+    if (currentObject === 1) {
+        vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
+    } else {
+        vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
+    }
     renderer.render(scene, camera);
 }
 
+// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
     if (currentObject > 13) currentObject = 1;
@@ -506,6 +557,7 @@ function switchObject() {
     return currentObject;
 }
 
+// Start aplikacji
 loadTesseract();
 animate();
 
