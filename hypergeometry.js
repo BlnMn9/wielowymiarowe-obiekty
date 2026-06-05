@@ -86,7 +86,7 @@ function buildThreeObjects() {
     });
 }
 
-// --- GENERATORY GEOMETRII (1 - 8) ---
+// --- GENERATORY GEOMETRII (1 - 7) ---
 
 function loadTesseract() {
     clearGeometry(0.04);
@@ -127,6 +127,10 @@ function loadPentachor() {
     }
     buildThreeObjects();
 }
+
+// --- DALSZY CIĄG W BLOKU NR 2 ---
+
+// --- CIĄG DALSZY GENERATORÓW GEOMETRII (3 - 13) ---
 
 function load24Cell() {
     clearGeometry(0.035);
@@ -440,16 +444,11 @@ function loadDuocylinder() {
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
-
-    // Flaga dla hipersześcianów 5D, 6D i 7D (obiekty nr 12, 6 i 7)
     const isHighDimCube = (currentObject === 6 || currentObject === 7 || currentObject === 12);
 
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        // --- Rotacje w ekstremalnych wymiarach (5D, 6D, 7D) ---
-        // Aby zachować efekt "czystego wywracania" jak na GIFie, przekształcamy wyższe wymiary stabilnie,
-        // lub pozwalamy im delikatnie pulsować w osiach nadrzędnych.
         if (currentObject === 7) {
             let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
             let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
@@ -463,8 +462,6 @@ function projectND() {
             let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
         }
 
-        // --- KLUCZOWA ZMIANA DLA EFEKTU Z GIF-a ---
-        // Dla obiektów 1 (Teserakt) oraz sześcianów 5D, 6D, 7D ustawiamy te same, czyste reguły rotacji 4D.
         let factorXW = 1.0;
         let factorYW = (currentObject === 1 || isHighDimCube) ? 0.0 : 0.6; 
 
@@ -474,7 +471,6 @@ function projectND() {
         let cosYW = Math.cos(angleYW * factorYW), sinYW = Math.sin(angleYW * factorYW);
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
-        // --- Kaskadowe rzutowanie perspektywiczne z wyższych wymiarów ---
         const dist = 2.0;
         if (currentObject === 7) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
         if (currentObject === 6) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
@@ -485,47 +481,17 @@ function projectND() {
         const distance4D = isSpecial4D ? 2.4 : dist;
         const f4D = 1 / (distance4D - w);
 
-        // Skalowanie widoku dla zachowania odpowiedniej wielkości na ekranie
         let scale = (currentObject === 1) ? 1.8 : 2.0;
         if (currentObject === 2) scale = 1.3;
         else if (currentObject === 5) scale = 1.7;
-        else if (currentObject === 7) scale = 3.2; // Lekko zwiększone dla lepszej czytelności 7D
-        else if (currentObject === 6) scale = 2.8; // Lekko zwiększone dla 6D
+        else if (currentObject === 7) scale = 3.2; 
+        else if (currentObject === 6) scale = 2.8; 
         else if (currentObject === 11) scale = 2.4; 
-        else if (currentObject === 12) scale = 2.5; // Lekko zwiększone dla 5D
+        else if (currentObject === 12) scale = 2.5; 
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
         else if (currentObject === 13) {
             scale = window.innerWidth < 600 ? 2.2 : 3.2;
         }
-
-        projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
-    });
-
-    for(let i = 0; i < spheres.length; i++) {
-        if(projectedVertices[i]) {
-            spheres[i].position.copy(projectedVertices[i]);
-            const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
-            let depthFactor = Math.max(0, Math.min(1, (worldPos.z + 1.4) / 2.8)); 
-            spheres[i].material.color.setRGB(0.15 + depthFactor * 0.85, 0.55 + depthFactor * 0.45, 0.75 + depthFactor * 0.25);
-        }
-    }
-
-    edges.forEach((edge, index) => {
-        const geo = lineGeometries[index];
-        if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
-            const posAttr = geo.attributes.position; const colAttr = geo.attributes.color;
-            const pA = projectedVertices[edge[0]]; const pB = projectedVertices[edge[1]];
-            posAttr.setXYZ(0, pA.x, pA.y, pA.z); posAttr.setXYZ(1, pB.x, pB.y, pB.z); posAttr.needsUpdate = true;
-            
-            const wA = pA.clone().applyEuler(edgeGroup.rotation); const wB = pB.clone().applyEuler(edgeGroup.rotation);
-            let depthA = Math.max(0, Math.min(1, (wA.z + 1.4) / 2.8)) * 0.5 + 0.5;
-            let depthB = Math.max(0, Math.min(1, (wB.z + 1.4) / 2.8)) * 0.5 + 0.5;
-            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85); colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
-            colAttr.needsUpdate = true;
-        }
-    });
-}
-
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
@@ -562,7 +528,6 @@ function animate() {
     angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; 
     projectND();
 
-    // Zmiana warunku: Blokujemy rotację 3D dla Teseraktu (1), Hekteraktu (6), Hepteraktu (7) oraz Penteraktu (12)
     if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12) {
         vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
@@ -570,7 +535,6 @@ function animate() {
     }
     renderer.render(scene, camera);
 }
-
 
 // --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
