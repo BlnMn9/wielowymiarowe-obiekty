@@ -57,7 +57,7 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    if (currentObject === 1) {
+    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
@@ -449,17 +449,21 @@ function projectND() {
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t;
 
-        if (currentObject === 7) {
-            let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
-            let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
-        }
-        if (currentObject === 6) {
-            let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
-            let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
-        }
-        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12) {
-            let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
-            let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
+        // DLA KOSTEK WYŻSZYCH WYMIARÓW ZAMRAŻAMY ROTACJE POWYŻEJ WYMIARU 4D (V, U, T)
+        // Pozwala to uzyskać czysty, symetryczny efekt "wywracania" z GIF-a bez zniekształceń.
+        if (!isHighDimCube) {
+            if (currentObject === 7) {
+                let cosXT = Math.cos(angleXT), sinXT = Math.sin(angleXT);
+                let xTmp = x * cosXT - t * sinXT; t = x * sinXT + t * cosXT; x = xTmp;
+            }
+            if (currentObject === 6) {
+                let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
+                let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
+            }
+            if (currentObject === 5 || currentObject === 11) {
+                let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
+                let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
+            }
         }
 
         let factorXW = 1.0;
