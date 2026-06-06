@@ -403,34 +403,47 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-// ZAKTUALIZOWANO: Zwiększono rozmiar sfer z 0.025 na 0.035 dla lepszej widoczności przy dużej skali
-function loadOkterakt() {
-    clearGeometry(0.045); // <-- TUTAJ: Zwiększamy kropki z 0.035 na 0.045
-    for (let i = 0; i < 256; i++) {
-        let x = (i & 1)   ? 0.55 : -0.55; let y = (i & 2)   ? 0.55 : -0.55;
-        let z = (i & 4)   ? 0.55 : -0.55; let w = (i & 8)   ? 0.55 : -0.55;
-        let v = (i & 16)  ? 0.55 : -0.55; let u = (i & 32)  ? 0.55 : -0.55;
-        let t = (i & 64)  ? 0.55 : -0.55; let s = (i & 128) ? 0.55 : -0.55;
-        verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: u, t: t, s: s });
-    }
 
-    // ... reszta pętli generującej krawędzie pozostaje bez zmian ...
-    for (let i = 0; i < 256; i++) {
-        for (let j = i + 1; j < 256; j++) {
+// NOWY OBIEKT: Hiperpiramida Tesseraktyczna (Zastępuje Okterakt)
+function loadOkterakt() {
+    clearGeometry(0.045); // Przywracamy standardową, ładną wielkość kropek
+    
+    // 1. Tworzymy podstawę w 4D (zwykły tesserakt)
+    for (let x of [-1, 1]) {
+        for (let y of [-1, 1]) {
+            for (let z of [-1, 1]) {
+                for (let w of [-1, 1]) {
+                    // Współrzędne w piątym wymiarze (v) ustawiamy na -0.4 (podstawa)
+                    verticesND.push({x: x * 0.7, y: y * 0.7, z: z * 0.7, w: w * 0.7, v: -0.4, u: 0, t: 0, s: 0});
+                }
+            }
+        }
+    }
+    
+    // Krawędzie podstawy tesseraktu
+    for (let i = 0; i < 16; i++) {
+        for (let j = i + 1; j < 16; j++) {
             let diff = 0;
             if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++; 
+            if (verticesND[i].y !== verticesND[j].y) diff++;
             if (verticesND[i].z !== verticesND[j].z) diff++;
             if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++;
-            if (verticesND[i].u !== verticesND[j].u) diff++;
-            if (verticesND[i].t !== verticesND[j].t) diff++;
-            if (verticesND[i].s !== verticesND[j].s) diff++;
             if (diff === 1) edges.push([i, j]);
         }
     }
+    
+    // 2. Dodajemy 17. wierzchołek (wierzchołek piramidy) wystrzelony w osi V (piąty wymiar)
+    const apexIndex = verticesND.length; // Indeks 16
+    verticesND.push({ x: 0, y: 0, z: 0, w: 0, v: 1.2, u: 0, t: 0, s: 0 });
+    
+    // Łączymy wszystkie 16 punktów podstawy z nowym wierzchołkiem
+    for (let i = 0; i < 16; i++) {
+        edges.push([i, apexIndex]);
+    }
+    
     buildThreeObjects();
 }
+
 
 
 // --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
