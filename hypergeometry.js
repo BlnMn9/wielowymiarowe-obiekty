@@ -404,23 +404,30 @@ function loadDuocylinder() {
 }
 
 
-// NOWY OBIEKT: Hiperpiramida Tesseraktyczna (Zastępuje Okterakt)
+// NOWY OBIEKT 14: Hiperpiramida Tesseraktyczna (Odpowiednio powiększona i zbalansowana)
 function loadOkterakt() {
-    clearGeometry(0.045); // Przywracamy standardową, ładną wielkość kropek
+    clearGeometry(0.035); // Optymalny, wyraźny rozmiar punktów
     
-    // 1. Tworzymy podstawę w 4D (zwykły tesserakt)
+    // 1. Podstawa 4D (Zwiększony rozstaw wierzchołków, aby obiekt był naturalnie większy)
+    const baseScale = 1.1; 
     for (let x of [-1, 1]) {
         for (let y of [-1, 1]) {
             for (let z of [-1, 1]) {
                 for (let w of [-1, 1]) {
-                    // Współrzędne w piątym wymiarze (v) ustawiamy na -0.4 (podstawa)
-                    verticesND.push({x: x * 0.7, y: y * 0.7, z: z * 0.7, w: w * 0.7, v: -0.4, u: 0, t: 0, s: 0});
+                    verticesND.push({
+                        x: x * baseScale, 
+                        y: y * baseScale, 
+                        z: z * baseScale, 
+                        w: w * baseScale, 
+                        v: -0.5, // Pozycja podstawy w 5. wymiarze
+                        u: 0, t: 0, s: 0
+                    });
                 }
             }
         }
     }
     
-    // Krawędzie podstawy tesseraktu
+    // Generowanie krawędzi podstawy tesseraktu
     for (let i = 0; i < 16; i++) {
         for (let j = i + 1; j < 16; j++) {
             let diff = 0;
@@ -432,17 +439,18 @@ function loadOkterakt() {
         }
     }
     
-    // 2. Dodajemy 17. wierzchołek (wierzchołek piramidy) wystrzelony w osi V (piąty wymiar)
-    const apexIndex = verticesND.length; // Indeks 16
-    verticesND.push({ x: 0, y: 0, z: 0, w: 0, v: 1.2, u: 0, t: 0, s: 0 });
+    // 2. Wierzchołek apyksalny wystrzelony w wymiar V
+    const apexIndex = verticesND.length; 
+    verticesND.push({ x: 0, y: 0, z: 0, w: 0, v: 1.5, u: 0, t: 0, s: 0 });
     
-    // Łączymy wszystkie 16 punktów podstawy z nowym wierzchołkiem
+    // Połączenie podstawy z wierzchołkiem piramidy
     for (let i = 0; i < 16; i++) {
         edges.push([i, apexIndex]);
     }
     
     buildThreeObjects();
 }
+
 
 
 
