@@ -405,7 +405,7 @@ function loadDuocylinder() {
 
 // ZAKTUALIZOWANO: Zwiększono rozmiar sfer z 0.025 na 0.035 dla lepszej widoczności przy dużej skali
 function loadOkterakt() {
-    clearGeometry(0.035); 
+    clearGeometry(0.045); // <-- TUTAJ: Zwiększamy kropki z 0.035 na 0.045
     for (let i = 0; i < 256; i++) {
         let x = (i & 1)   ? 0.55 : -0.55; let y = (i & 2)   ? 0.55 : -0.55;
         let z = (i & 4)   ? 0.55 : -0.55; let w = (i & 8)   ? 0.55 : -0.55;
@@ -413,6 +413,7 @@ function loadOkterakt() {
         let t = (i & 64)  ? 0.55 : -0.55; let s = (i & 128) ? 0.55 : -0.55;
         verticesND.push({ x: x, y: y, z: z, w: w, v: v, u: u, t: t, s: s });
     }
+
     // ... reszta pętli generującej krawędzie pozostaje bez zmian ...
     for (let i = 0; i < 256; i++) {
         for (let j = i + 1; j < 256; j++) {
