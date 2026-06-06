@@ -497,7 +497,7 @@ function projectND() {
         else if (currentObject === 6) scale = 2.8; 
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.5; 
-        else if (currentObject === 14) scale = 28.0; // <-- TUTAJ: Potężna zmiana z 12.0 na 28.0
+        else if (currentObject === 14) scale = 2.2; // <-- ZMIANA: Zmniejszamy z 16.0 na 2.2, idealnie dopasowane do ekranu
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
         else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
 
