@@ -404,30 +404,23 @@ function loadDuocylinder() {
 }
 
 
-// NOWY OBIEKT 14: Hiperpiramida Tesseraktyczna (Odpowiednio powiększona i zbalansowana)
+// NOWY OBIEKT: Hiperpiramida Tesseraktyczna (Zastępuje Okterakt)
 function loadOkterakt() {
-    clearGeometry(0.035); // Optymalny, wyraźny rozmiar punktów
+    clearGeometry(0.045); // Przywracamy standardową, ładną wielkość kropek
     
-    // 1. Podstawa 4D (Zwiększony rozstaw wierzchołków, aby obiekt był naturalnie większy)
-    const baseScale = 1.1; 
+    // 1. Tworzymy podstawę w 4D (zwykły tesserakt)
     for (let x of [-1, 1]) {
         for (let y of [-1, 1]) {
             for (let z of [-1, 1]) {
                 for (let w of [-1, 1]) {
-                    verticesND.push({
-                        x: x * baseScale, 
-                        y: y * baseScale, 
-                        z: z * baseScale, 
-                        w: w * baseScale, 
-                        v: -0.5, // Pozycja podstawy w 5. wymiarze
-                        u: 0, t: 0, s: 0
-                    });
+                    // Współrzędne w piątym wymiarze (v) ustawiamy na -0.4 (podstawa)
+                    verticesND.push({x: x * 0.7, y: y * 0.7, z: z * 0.7, w: w * 0.7, v: -0.4, u: 0, t: 0, s: 0});
                 }
             }
         }
     }
     
-    // Generowanie krawędzi podstawy tesseraktu
+    // Krawędzie podstawy tesseraktu
     for (let i = 0; i < 16; i++) {
         for (let j = i + 1; j < 16; j++) {
             let diff = 0;
@@ -439,17 +432,18 @@ function loadOkterakt() {
         }
     }
     
-    // 2. Wierzchołek apyksalny wystrzelony w wymiar V
-    const apexIndex = verticesND.length; 
-    verticesND.push({ x: 0, y: 0, z: 0, w: 0, v: 1.5, u: 0, t: 0, s: 0 });
+    // 2. Dodajemy 17. wierzchołek (wierzchołek piramidy) wystrzelony w osi V (piąty wymiar)
+    const apexIndex = verticesND.length; // Indeks 16
+    verticesND.push({ x: 0, y: 0, z: 0, w: 0, v: 1.2, u: 0, t: 0, s: 0 });
     
-    // Połączenie podstawy z wierzchołkiem piramidy
+    // Łączymy wszystkie 16 punktów podstawy z nowym wierzchołkiem
     for (let i = 0; i < 16; i++) {
         edges.push([i, apexIndex]);
     }
     
     buildThreeObjects();
 }
+
 
 
 
@@ -499,25 +493,17 @@ function projectND() {
         const f4D = 1 / (distance4D - w);
 
         // INDYWIDUALNE DOPASOWANIE ROZMIARU DLA KAŻDEGO OBIEKTU (Wartości idealnie wyważone pod ekran)
-        let scale = 2.0; 
-        switch(currentObject) {
-            case 1:  scale = 1.8;  break; // Tesserakt
-            case 2:  scale = 1.3;  break; // Pentachor
-            case 3:  scale = 1.3;  break; // 24-Cell
-            case 4:  scale = 1.2;  break; // 16-Cell
-            case 5:  scale = 1.7;  break; // 5D Simplex
-            case 6:  scale = 2.8;  break; // Hekterakt
-            case 7:  scale = 3.2;  break; // Hepterakt
-            case 8:  scale = 2.5;  break; // Hiperpiramida
-            case 9:  scale = 2.8;  break; // Butelka Kleina
-            case 10: scale = 2.8;  break; // Spherinder
-            case 11: scale = 2.4;  break; // 5D Cross Polytope
-            case 12: scale = 2.5;  break; // 5D Hypercube
-            case 13: scale = (window.innerWidth < 600 ? 2.2 : 3.2); break; // Duocylinder
-            case 14: scale = 5.2;  break; // NOWA WARTOŚĆ: Hiperpiramida Tesseraktyczna (Wyciągnięta i duża)
-        }
+        let scale = (currentObject === 1) ? 1.8 : 2.0;
+        if (currentObject === 2) scale = 1.3;
+        else if (currentObject === 5) scale = 1.7;
+        else if (currentObject === 7) scale = 3.2; 
+        else if (currentObject === 6) scale = 2.8; 
+        else if (currentObject === 11) scale = 2.4; 
+        else if (currentObject === 12) scale = 2.5; 
+        else if (currentObject === 14) scale = 2.2; // <-- ZMIANA: Zmniejszamy z 16.0 na 2.2, idealnie dopasowane do ekranu
+        else if (currentObject === 9 || currentObject === 10) scale = 2.8;
+        else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
 
-        projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
 
 
 
