@@ -484,10 +484,10 @@ function projectND() {
         else if (currentObject === 6) scale = 2.8; 
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.5; 
-        // ZAKTUALIZOWANO: Potężne zwiększenie skali z 5.8 do 12.0, aby przełamać efekt perspektywy 8D
-        else if (currentObject === 14) scale = 12.0; 
+        else if (currentObject === 14) scale = 28.0; // <-- TUTAJ: Potężna zmiana z 12.0 na 28.0
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
         else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
+
 
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
