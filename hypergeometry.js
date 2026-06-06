@@ -490,16 +490,27 @@ function projectND() {
         const distance4D = isSpecial4D ? 2.4 : dist;
         const f4D = 1 / (distance4D - w);
 
-        let scale = (currentObject === 1) ? 1.8 : 2.0;
-        if (currentObject === 2) scale = 1.3;
-        else if (currentObject === 5) scale = 1.7;
-        else if (currentObject === 7) scale = 3.2; 
-        else if (currentObject === 6) scale = 2.8; 
-        else if (currentObject === 11) scale = 2.4; 
-        else if (currentObject === 12) scale = 2.5; 
-        else if (currentObject === 14) scale = 2.2; // <-- ZMIANA: Zmniejszamy z 16.0 na 2.2, idealnie dopasowane do ekranu
-        else if (currentObject === 9 || currentObject === 10) scale = 2.8;
-        else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
+        // INDYWIDUALNE DOPASOWANIE ROZMIARU DLA KAŻDEGO OBIEKTU (Wartości idealnie wyważone pod ekran)
+        let scale = 2.0; 
+        switch(currentObject) {
+            case 1:  scale = 1.8;  break; // Tesserakt
+            case 2:  scale = 1.3;  break; // Pentachor
+            case 3:  scale = 1.3;  break; // 24-Cell
+            case 4:  scale = 1.2;  break; // 16-Cell
+            case 5:  scale = 1.7;  break; // 5D Simplex
+            case 6:  scale = 2.8;  break; // Hekterakt
+            case 7:  scale = 3.2;  break; // Hepterakt
+            case 8:  scale = 2.5;  break; // Hiperpiramida
+            case 9:  scale = 2.8;  break; // Butelka Kleina
+            case 10: scale = 2.8;  break; // Spherinder
+            case 11: scale = 2.4;  break; // 5D Cross Polytope
+            case 12: scale = 2.5;  break; // 5D Hypercube
+            case 13: scale = (window.innerWidth < 600 ? 2.2 : 3.2); break; // Duocylinder
+            case 14: scale = 5.2;  break; // NOWA WARTOŚĆ: Hiperpiramida Tesseraktyczna (Wyciągnięta i duża)
+        }
+
+        projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
+
 
 
 
