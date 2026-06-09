@@ -58,14 +58,15 @@ function clearGeometry(size) {
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    // Obiekt 14 (8D) zostaje dołączony do grupy z zablokowaną rotacją 3D dla czystego efektu gifu
-    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14) {
+    // Obiekt 14 i 15 zostaje dołączony do grupy z zablokowaną rotacją 3D
+    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14 || currentObject === 15) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
         vertexGroup.rotation.set(0.5, 0.5, 0);
         edgeGroup.rotation.set(0.5, 0.5, 0);
     }
+
 }
 
 function buildThreeObjects() {
