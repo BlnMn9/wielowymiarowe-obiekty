@@ -570,10 +570,9 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 14) currentObject = 1;
+    if (currentObject > 15) currentObject = 1; // Zmieniono 14 na 15
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -590,9 +589,11 @@ function switchObject() {
         case 12: load5DHypercube(); break;     
         case 13: loadDuocylinder(); break; 
         case 14: loadOkterakt(); break;
+        case 15: load8DOkterakt(); break; // Nasz nowy gigant 8D
     }
     return currentObject;
 }
+
 
 // Start aplikacji
 loadTesseract();
