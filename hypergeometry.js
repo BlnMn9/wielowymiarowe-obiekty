@@ -1,4 +1,7 @@
-// --- INICJALIZACJA SILNIKA I SCENY ---
+// ==========================================
+// PLIK: hypergeometry.js - CZĘŚĆ 1 z 2
+// ==========================================
+
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 
@@ -33,7 +36,6 @@ let edges = [];
 let spheres = [];
 let lineGeometries = [];
 
-// Dodatkowa oś rotacji angleZS dla wymiaru 8D
 let angleXW = 0, angleYW = 0, angleXV = 0, angleZU = 0, angleXT = 0, angleZS = 0; 
 let currentObject = 1; 
 
@@ -51,22 +53,20 @@ const lineMat = new THREE.LineBasicMaterial({
     opacity: 0.85 
 });
 
-// --- FUNKCJE CZYSZCZENIA I BUDOWANIA ---
+// --- FUNKCJE POMOCNICZE ---
 function clearGeometry(size) {
     while(vertexGroup.children.length > 0){ vertexGroup.remove(vertexGroup.children[0]); }
     while(edgeGroup.children.length > 0){ edgeGroup.remove(edgeGroup.children[0]); }
     verticesND = []; edges = []; spheres = []; lineGeometries = [];
     sphereGeo = new THREE.SphereGeometry(size, 8, 8);
     
-    // Obiekt 14 i 15 zostaje dołączony do grupy z zablokowaną rotacją 3D
-    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14 || currentObject === 15) {
+    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14) {
         vertexGroup.rotation.set(0.38, 0.62, 0);
         edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
         vertexGroup.rotation.set(0.5, 0.5, 0);
         edgeGroup.rotation.set(0.5, 0.5, 0);
     }
-
 }
 
 function buildThreeObjects() {
@@ -89,8 +89,7 @@ function buildThreeObjects() {
     });
 }
 
-// --- GENERATORY GEOMETRII (1 - 7) ---
-
+// --- GENERATORY GEOMETRII (OBIEKTY 1 - 15) ---
 function loadTesseract() {
     clearGeometry(0.04);
     for (let x of [-1, 1]) {
@@ -130,10 +129,6 @@ function loadPentachor() {
     }
     buildThreeObjects();
 }
-
-// --- DALSZY CIĄG W BLOKU NR 2 ---
-
-// --- CIĄG DALSZY GENERATORÓW GEOMETRII (3 - 14) ---
 
 function load24Cell() {
     clearGeometry(0.035);
@@ -382,6 +377,12 @@ function load5DHypercube() {
     buildThreeObjects();
 }
 
+// --- Wklej bezpośrednio poniżej Część 2 z drugiego okna ---
+
+// ==========================================
+// PLIK: hypergeometry.js - CZĘŚĆ 2 z 2
+// ==========================================
+
 function loadDuocylinder() {
     clearGeometry(0.028); 
     const stepsU = 20; const stepsV = 20; const r1 = 0.95; const r2 = 0.95;
@@ -404,24 +405,17 @@ function loadDuocylinder() {
     buildThreeObjects();
 }
 
-
-// NOWY OBIEKT: Hiperpiramida Tesseraktyczna (Zastępuje Okterakt)
 function loadOkterakt() {
-    clearGeometry(0.045); // Przywracamy standardową, ładną wielkość kropek
-    
-    // 1. Tworzymy podstawę w 4D (zwykły tesserakt)
+    clearGeometry(0.045); 
     for (let x of [-1, 1]) {
         for (let y of [-1, 1]) {
             for (let z of [-1, 1]) {
                 for (let w of [-1, 1]) {
-                    // Współrzędne w piątym wymiarze (v) ustawiamy na -0.4 (podstawa)
                     verticesND.push({x: x * 0.7, y: y * 0.7, z: z * 0.7, w: w * 0.7, v: -0.4, u: 0, t: 0, s: 0});
                 }
             }
         }
     }
-    
-    // Krawędzie podstawy tesseraktu
     for (let i = 0; i < 16; i++) {
         for (let j = i + 1; j < 16; j++) {
             let diff = 0;
@@ -432,72 +426,37 @@ function loadOkterakt() {
             if (diff === 1) edges.push([i, j]);
         }
     }
-    
-    // 2. Dodajemy 17. wierzchołek (wierzchołek piramidy) wystrzelony w osi V (piąty wymiar)
-    const apexIndex = verticesND.length; // Indeks 16
+    const apexIndex = verticesND.length; 
     verticesND.push({ x: 0, y: 0, z: 0, w: 0, v: 1.2, u: 0, t: 0, s: 0 });
-    
-    // Łączymy wszystkie 16 punktów podstawy z nowym wierzchołkiem
-    for (let i = 0; i < 16; i++) {
-        edges.push([i, apexIndex]);
-    }
-    
+    for (let i = 0; i < 16; i++) { edges.push([i, apexIndex]); }
     buildThreeObjects();
 }
 
-
-// NOWY OBIEKT 15: Prawdziwy Okterakt (Hipersześcian 8D)
-function load8DOkterakt() {
-    clearGeometry(0.012); // Zmniejszone kulki, aby 256 wierzchołków nie zlewało się w plamę
-    
-    // Generowanie 256 wierzchołków w 8 wymiarach (x, y, z, w, v, u, t, s)
-    for (let x of [-1, 1]) {
-        for (let y of [-1, 1]) {
-            for (let z of [-1, 1]) {
-                for (let w of [-1, 1]) {
-                    for (let v of [-1, 1]) {
-                        for (let u of [-1, 1]) {
-                            for (let t of [-1, 1]) {
-                                for (let s of [-1, 1]) {
-                                    verticesND.push({ 
-                                        x: x * 0.5, y: y * 0.5, z: z * 0.5, w: w * 0.5, 
-                                        v: v * 0.5, u: u * 0.5, t: t * 0.5, s: s * 0.5 
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    // Generowanie 1024 krawędzi (łączymy wierzchołki różniące się tylko jedną współrzędną)
+function load6DCrossPolytope() {
+    clearGeometry(0.045); 
+    const r = 1.2;
+    verticesND = [
+        { x:  r, y:  0, z:  0, w:  0, v:  0, u:  0, t: 0, s: 0 }, { x: -r, y:  0, z:  0, w:  0, v:  0, u:  0, t: 0, s: 0 },
+        { x:  0, y:  r, z:  0, w:  0, v:  0, u:  0, t: 0, s: 0 }, { x:  0, y: -r, z:  0, w:  0, v:  0, u:  0, t: 0, s: 0 },
+        { x:  0, y:  0, z:  r, w:  0, v:  0, u:  0, t: 0, s: 0 }, { x:  0, y:  0, z: -r, w:  0, v:  0, u:  0, t: 0, s: 0 },
+        { x:  0, y:  0, z:  0, w:  r, v:  0, u:  0, t: 0, s: 0 }, { x:  0, y:  0, z:  0, w: -r, v:  0, u:  0, t: 0, s: 0 },
+        { x:  0, y:  0, z:  0, w:  0, v:  r, u:  0, t: 0, s: 0 }, { x:  0, y:  0, z:  0, w:  0, v: -r, u:  0, t: 0, s: 0 },
+        { x:  0, y:  0, z:  0, w:  0, v:  0, u:  r, t: 0, s: 0 }, { x:  0, y:  0, z:  0, w:  0, v:  0, u: -r, t: 0, s: 0 }
+    ];
     for (let i = 0; i < verticesND.length; i++) {
         for (let j = i + 1; j < verticesND.length; j++) {
-            let diff = 0;
-            if (verticesND[i].x !== verticesND[j].x) diff++;
-            if (verticesND[i].y !== verticesND[j].y) diff++;
-            if (verticesND[i].z !== verticesND[j].z) diff++;
-            if (verticesND[i].w !== verticesND[j].w) diff++;
-            if (verticesND[i].v !== verticesND[j].v) diff++;
-            if (verticesND[i].u !== verticesND[j].u) diff++;
-            if (verticesND[i].t !== verticesND[j].t) diff++;
-            if (verticesND[i].s !== verticesND[j].s) diff++;
-            if (diff === 1) edges.push([i, j]);
+            if ((i===0 && j===1) || (i===2 && j===3) || (i===4 && j===5) || (i===6 && j===7) || (i===8 && j===9) || (i===10 && j===11)) continue;
+            edges.push([i, j]);
         }
     }
     buildThreeObjects();
 }
-
-
 
 // --- PROJEKCJA I RENDEROWANIE ND -> 3D ---
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
-    // Dodajemy 15 do obiektów wielościennych, aby zablokować niepotrzebne obroty psujące strukturę
-    const isHighDimCube = (currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14 || currentObject === 15);
+    const isHighDimCube = (currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14);
 
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t, s = p.s;
@@ -515,6 +474,12 @@ function projectND() {
                 let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
                 let xTmp = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp;
             }
+            if (currentObject === 15) {
+                let cosZU = Math.cos(angleZU), sinZU = Math.sin(angleZU);
+                let zTmp = z * cosZU - u * sinZU; u = z * sinZU + u * cosZU; z = zTmp;
+                let cosXV = Math.cos(angleXV), sinXV = Math.sin(angleXV);
+                let xTmp2 = x * cosXV - v * sinXV; v = x * sinXV + v * cosXV; x = xTmp2;
+            }
         }
 
         let factorXW = 1.0;
@@ -527,9 +492,8 @@ function projectND() {
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
         const dist = 2.0;
-        // Włączamy zaawansowane rzutowanie głębi wymiarowej (5D-8D) dla obiektu 15
-        if (currentObject === 14 || currentObject === 15) { const f8D = 1 / (dist - s); x *= f8D; y *= f8D; z *= f8D; w *= f8D; v *= f8D; u *= f8D; t *= f8D; }
-        if (currentObject === 7 || currentObject === 14 || currentObject === 15) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
+        if (currentObject === 14) { const f8D = 1 / (dist - s); x *= f8D; y *= f8D; z *= f8D; w *= f8D; v *= f8D; u *= f8D; t *= f8D; }
+        if (currentObject === 7 || currentObject === 14) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
         if (currentObject === 6 || currentObject === 14 || currentObject === 15) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
         if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12 || currentObject === 14 || currentObject === 15) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
@@ -538,7 +502,6 @@ function projectND() {
         const distance4D = isSpecial4D ? 2.4 : dist;
         const f4D = 1 / (distance4D - w);
 
-        // INDYWIDUALNE DOPASOWANIE ROZMIARU DLA KAŻDEGO OBIEKTU
         let scale = (currentObject === 1) ? 1.8 : 2.0;
         if (currentObject === 2) scale = 1.3;
         else if (currentObject === 5) scale = 1.7;
@@ -547,14 +510,13 @@ function projectND() {
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.5; 
         else if (currentObject === 14) scale = 28.0;
-        else if (currentObject === 15) scale = 65.0; 
+        else if (currentObject === 15) scale = 2.6; 
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
         else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
-    // PRZYWRÓCONY KOD AKTUALIZACJI GRAFIKI W THREE.JS
     for(let i = 0; i < spheres.length; i++) {
         if(projectedVertices[i]) {
             spheres[i].position.copy(projectedVertices[i]);
@@ -578,7 +540,7 @@ function projectND() {
             colAttr.needsUpdate = true;
         }
     });
-} // <-- Brakująca klamra zamykająca funkcję projectND()
+}
 
 // --- GLOBALNA PĘTLA ANIMACJI ---
 function animate() {
@@ -587,8 +549,7 @@ function animate() {
     angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; angleZS += speed * 0.15;
     projectND();
 
-    // Dodano obiekt 15 do listy z zablokowaną rotacją kamery
-    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14 || currentObject === 15) {
+    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14) {
         vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
         vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
@@ -596,10 +557,10 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-
+// --- KONTROLA PRZEŁĄCZANIA OBIEKTÓW ---
 function switchObject() {
     currentObject++;
-    if (currentObject > 15) currentObject = 1; // Zmieniono 14 na 15
+    if (currentObject > 15) currentObject = 1; 
 
     switch(currentObject) {
         case 1: loadTesseract(); break;
@@ -616,13 +577,12 @@ function switchObject() {
         case 12: load5DHypercube(); break;     
         case 13: loadDuocylinder(); break; 
         case 14: loadOkterakt(); break;
-        case 15: load8DOkterakt(); break; // Nasz nowy gigant 8D
+        case 15: load6DCrossPolytope(); break; 
     }
     return currentObject;
 }
 
-
-// Start aplikacji
+// Uruchomienie aplikacji
 loadTesseract();
 animate();
 
