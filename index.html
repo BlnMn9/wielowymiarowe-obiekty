@@ -78,7 +78,6 @@
     <script src="hypergeometry.js"></script>
 
     <script>
-        // Tablica z opisami obiektów dla UI - naprawiona kropka ze średnikiem na końcu obiektu 14
         const objectsUI = {
             1: { title: "1. Teserakt (Hiperkostka 4D)", desc: "Oglądasz rzut perspektywiczny czterowymiarowej kostki rotującej jednocześnie w kilku płaszczyznach przestrzeni 4D. Posiada 16 wierzchołków i 32 krawędzie." },
             2: { title: "2. Pentachor (5-Komórka)", desc: "Matematycznie wycentrowana 4-wymiarowa odmiana czworościanu. Posiada 5 wierzchołków połączonych w idealną, harmonijną sieć 10 krawędzi, która płynnie rotuje w kadrze." },
@@ -94,7 +93,7 @@
             12: { title: "12. Penterakt (Hipersześcian 5D)", desc: "Kostka w przestrzeni pięciowymiarowej wygenerowana wektorowo! Składa się z 32 wierzchołków i 80 krawędzi. To co widzisz, to podwójny rzut perspektywiczny (z 5D do 4D, a następnie do przestrzeni 3D) ujawniający hipnotyzujące przeplatanie linii." },
             13: { title: "13. Dwucylinder (Duocylinder 4D)", desc: "Czterowymiarowy obiekt będący iloczynem kartezjańskim dwóch kół. Posiada unikalną cechę: cała jego powierzchnia jest idealnie zakrzywiona i zamknięta w 4D. W rzucie trójwymiarowym ujawnia się jako fascynująca, spleciona klatka przypominająca podwójny torus." },
             14: { title: "14. Hiperpiramida Tesseraktyczna (5D)", desc: "Mniejsza, niezwykle czytelna struktura pięciowymiarowa. Jej podstawą jest czterowymiarowa kostka (Teserakt - 16 wierzchołków), której punkty zbiegają się ku jednemu wierzchołkowi (wierzchołkowi apyksalnemu) wysuniętemu w piąty wymiar." },
-            15: { title: "15. Prawdziwy Okterakt (Hipersześcian 8D)", desc: "Ogromna i niesamowicie złożona figura ośmiowymiarowa! Składa się z 256 wierzchołków i 1024 krawędzi. Trójwymiarowy obraz powstaje na drodze potężnego, pięciokrotnego rzutu perspektywicznego, ujawniając ekstremalną złożoność przestrzeni 8D." }
+            15: { title: "15. Ortopleks 6D (Heksacross)", desc: "Sześciowymiarowy odpowiednik ośmiościanu foremnego. Składa się z zaledwie 12 wierzchołków połączonych 60 krawędziami. Dzięki swojej lekkości, geometrycznej symetrii i głębokiemu rzutowaniu z 6D, tworzy hipnotyzującą, krystaliczną i niezwykle płynną strukturę sieciową." }
         };
 
         const titleEl = document.getElementById('object-title');
@@ -107,7 +106,6 @@
             titleEl.innerText = objectsUI[nextID].title;
             descEl.innerText = objectsUI[nextID].desc;
 
-            // Zmieniony warunek powrotu z 14 na 15
             if (nextID === 15) {
                 nextBtn.innerText = "Zobacz Teserakt";
             } else {
