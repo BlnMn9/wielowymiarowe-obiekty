@@ -496,7 +496,8 @@ function load8DOkterakt() {
 function projectND() {
     const projectedVertices = [];
     const isSpecial4D = (currentObject === 8 || currentObject === 9 || currentObject === 10 || currentObject === 13);
-    const isHighDimCube = (currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14);
+    // Dodajemy 15 do obiektów wielościennych, aby zablokować niepotrzebne obroty psujące strukturę
+    const isHighDimCube = (currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14 || currentObject === 15);
 
     verticesND.forEach(p => {
         let x = p.x, y = p.y, z = p.z, w = p.w, v = p.v, u = p.u, t = p.t, s = p.s;
@@ -526,17 +527,18 @@ function projectND() {
         let y1 = y * cosYW - w * sinYW; w = y * sinYW + w * cosYW; y = y1;
 
         const dist = 2.0;
-        if (currentObject === 14) { const f8D = 1 / (dist - s); x *= f8D; y *= f8D; z *= f8D; w *= f8D; v *= f8D; u *= f8D; t *= f8D; }
-        if (currentObject === 7 || currentObject === 14) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
-        if (currentObject === 6 || currentObject === 14) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
-        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12 || currentObject === 14) { 
+        // Włączamy zaawansowane rzutowanie głębi wymiarowej (5D-8D) dla obiektu 15
+        if (currentObject === 14 || currentObject === 15) { const f8D = 1 / (dist - s); x *= f8D; y *= f8D; z *= f8D; w *= f8D; v *= f8D; u *= f8D; t *= f8D; }
+        if (currentObject === 7 || currentObject === 14 || currentObject === 15) { const f7D = 1 / (dist - t); x *= f7D; y *= f7D; z *= f7D; w *= f7D; v *= f7D; u *= f7D; }
+        if (currentObject === 6 || currentObject === 14 || currentObject === 15) { const f6D = 1 / (dist - u); x *= f6D; y *= f6D; z *= f6D; w *= f6D; v *= f6D; }
+        if (currentObject === 5 || currentObject === 6 || currentObject === 7 || currentObject === 11 || currentObject === 12 || currentObject === 14 || currentObject === 15) { 
             const f5D = 1 / (dist - v); x *= f5D; y *= f5D; z *= f5D; w *= f5D; 
         }
 
         const distance4D = isSpecial4D ? 2.4 : dist;
         const f4D = 1 / (distance4D - w);
 
-        // INDYWIDUALNE DOPASOWANIE ROZMIARU DLA KAŻDEGO OBIEKTU (Wartości idealnie wyważone pod ekran)
+        // INDYWIDUALNE DOPASOWANIE ROZMIARU DLA KAŻDEGO OBIEKTU
         let scale = (currentObject === 1) ? 1.8 : 2.0;
         if (currentObject === 2) scale = 1.3;
         else if (currentObject === 5) scale = 1.7;
@@ -545,40 +547,13 @@ function projectND() {
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.5; 
         else if (currentObject === 14) scale = 28.0;
+        else if (currentObject === 15) scale = 65.0; // Bardzo wysoka skala, aby zrównoważyć wielokrotne zmniejszenie przez pięć f-wymiarowych ułamków
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
         else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
-
-
-
-
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
-    for(let i = 0; i < spheres.length; i++) {
-        if(projectedVertices[i]) {
-            spheres[i].position.copy(projectedVertices[i]);
-            const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
-            let depthFactor = Math.max(0, Math.min(1, (worldPos.z + 1.4) / 2.8)); 
-            spheres[i].material.color.setRGB(0.15 + depthFactor * 0.85, 0.55 + depthFactor * 0.45, 0.75 + depthFactor * 0.25);
-        }
-    }
-
-    edges.forEach((edge, index) => {
-        const geo = lineGeometries[index];
-        if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
-            const posAttr = geo.attributes.position; const colAttr = geo.attributes.color;
-            const pA = projectedVertices[edge[0]]; const pB = projectedVertices[edge[1]];
-            posAttr.setXYZ(0, pA.x, pA.y, pA.z); posAttr.setXYZ(1, pB.x, pB.y, pB.z); posAttr.needsUpdate = true;
-            
-            const wA = pA.clone().applyEuler(edgeGroup.rotation); const wB = pB.clone().applyEuler(edgeGroup.rotation);
-            let depthA = Math.max(0, Math.min(1, (wA.z + 1.4) / 2.8)) * 0.5 + 0.5;
-            let depthB = Math.max(0, Math.min(1, (wB.z + 1.4) / 2.8)) * 0.5 + 0.5;
-            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85); colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
-            colAttr.needsUpdate = true;
-        }
-    });
-}
 
 // --- GLOBALNA PĘTLA ANIMACJI ---
 function animate() {
