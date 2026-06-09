@@ -445,6 +445,49 @@ function loadOkterakt() {
 }
 
 
+// NOWY OBIEKT 15: Prawdziwy Okterakt (Hipersześcian 8D)
+function load8DOkterakt() {
+    clearGeometry(0.012); // Zmniejszone kulki, aby 256 wierzchołków nie zlewało się w plamę
+    
+    // Generowanie 256 wierzchołków w 8 wymiarach (x, y, z, w, v, u, t, s)
+    for (let x of [-1, 1]) {
+        for (let y of [-1, 1]) {
+            for (let z of [-1, 1]) {
+                for (let w of [-1, 1]) {
+                    for (let v of [-1, 1]) {
+                        for (let u of [-1, 1]) {
+                            for (let t of [-1, 1]) {
+                                for (let s of [-1, 1]) {
+                                    verticesND.push({ 
+                                        x: x * 0.5, y: y * 0.5, z: z * 0.5, w: w * 0.5, 
+                                        v: v * 0.5, u: u * 0.5, t: t * 0.5, s: s * 0.5 
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Generowanie 1024 krawędzi (łączymy wierzchołki różniące się tylko jedną współrzędną)
+    for (let i = 0; i < verticesND.length; i++) {
+        for (let j = i + 1; j < verticesND.length; j++) {
+            let diff = 0;
+            if (verticesND[i].x !== verticesND[j].x) diff++;
+            if (verticesND[i].y !== verticesND[j].y) diff++;
+            if (verticesND[i].z !== verticesND[j].z) diff++;
+            if (verticesND[i].w !== verticesND[j].w) diff++;
+            if (verticesND[i].v !== verticesND[j].v) diff++;
+            if (verticesND[i].u !== verticesND[j].u) diff++;
+            if (verticesND[i].t !== verticesND[j].t) diff++;
+            if (verticesND[i].s !== verticesND[j].s) diff++;
+            if (diff === 1) edges.push([i, j]);
+        }
+    }
+    buildThreeObjects();
+}
 
 
 
