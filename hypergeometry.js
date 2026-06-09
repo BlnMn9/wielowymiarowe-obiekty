@@ -547,13 +547,38 @@ function projectND() {
         else if (currentObject === 11) scale = 2.4; 
         else if (currentObject === 12) scale = 2.5; 
         else if (currentObject === 14) scale = 28.0;
-        else if (currentObject === 15) scale = 65.0; // Bardzo wysoka skala, aby zrównoważyć wielokrotne zmniejszenie przez pięć f-wymiarowych ułamków
+        else if (currentObject === 15) scale = 65.0; 
         else if (currentObject === 9 || currentObject === 10) scale = 2.8;
         else if (currentObject === 13) scale = window.innerWidth < 600 ? 2.2 : 3.2;
 
         projectedVertices.push(new THREE.Vector3(x * f4D * scale, y * f4D * scale, z * f4D * scale));
     });
 
+    // PRZYWRÓCONY KOD AKTUALIZACJI GRAFIKI W THREE.JS
+    for(let i = 0; i < spheres.length; i++) {
+        if(projectedVertices[i]) {
+            spheres[i].position.copy(projectedVertices[i]);
+            const worldPos = projectedVertices[i].clone().applyEuler(vertexGroup.rotation);
+            let depthFactor = Math.max(0, Math.min(1, (worldPos.z + 1.4) / 2.8)); 
+            spheres[i].material.color.setRGB(0.15 + depthFactor * 0.85, 0.55 + depthFactor * 0.45, 0.75 + depthFactor * 0.25);
+        }
+    }
+
+    edges.forEach((edge, index) => {
+        const geo = lineGeometries[index];
+        if(geo && projectedVertices[edge[0]] && projectedVertices[edge[1]]) {
+            const posAttr = geo.attributes.position; const colAttr = geo.attributes.color;
+            const pA = projectedVertices[edge[0]]; const pB = projectedVertices[edge[1]];
+            posAttr.setXYZ(0, pA.x, pA.y, pA.z); posAttr.setXYZ(1, pB.x, pB.y, pB.z); posAttr.needsUpdate = true;
+            
+            const wA = pA.clone().applyEuler(edgeGroup.rotation); const wB = pB.clone().applyEuler(edgeGroup.rotation);
+            let depthA = Math.max(0, Math.min(1, (wA.z + 1.4) / 2.8)) * 0.5 + 0.5;
+            let depthB = Math.max(0, Math.min(1, (wB.z + 1.4) / 2.8)) * 0.5 + 0.5;
+            colAttr.setXYZ(0, 0.0, depthA * 1.0, depthA * 0.85); colAttr.setXYZ(1, 0.0, depthB * 1.0, depthB * 0.85);
+            colAttr.needsUpdate = true;
+        }
+    });
+} // <-- Brakująca klamra zamykająca funkcję projectND()
 
 // --- GLOBALNA PĘTLA ANIMACJI ---
 function animate() {
@@ -562,13 +587,15 @@ function animate() {
     angleXW += speed; angleYW += speed; angleXV += speed * 0.4; angleZU += speed * 0.3; angleXT += speed * 0.2; angleZS += speed * 0.15;
     projectND();
 
-    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14) {
+    // Dodano obiekt 15 do listy z zablokowaną rotacją kamery
+    if (currentObject === 1 || currentObject === 6 || currentObject === 7 || currentObject === 12 || currentObject === 14 || currentObject === 15) {
         vertexGroup.rotation.set(0.38, 0.62, 0); edgeGroup.rotation.set(0.38, 0.62, 0);
     } else {
         vertexGroup.rotation.y += 0.0012; edgeGroup.rotation.y += 0.0012;
     }
     renderer.render(scene, camera);
 }
+
 
 function switchObject() {
     currentObject++;
